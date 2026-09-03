@@ -72,12 +72,9 @@
   .mode-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
   .mode-btn.active { background: var(--accent); color: #1a0a00; font-weight: 600; }
 
-  form {
-    width: 100%;
-    max-width: 580px;
-    display: flex;
-    gap: 10px;
-  }
+  form { width: 100%; max-width: 580px; display: flex; gap: 10px; }
+  form[hidden] { display: none; }
+
   textarea {
     flex: 1;
     resize: none;
@@ -93,6 +90,7 @@
   }
   textarea::placeholder { color: var(--text-faint); }
   textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,111,60,0.18); }
+
   button.submit {
     padding: 0 24px;
     border-radius: 13px;
@@ -115,6 +113,23 @@
     border-radius: 4px; padding: 1px 6px; font-size: 0.72rem;
   }
 
+  .dropzone {
+    flex: 1;
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    border-radius: 13px;
+    border: 1px dashed var(--border);
+    background: var(--bg-soft);
+    color: var(--text-faint);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent); color: var(--text-dim); }
+  .dropzone.has-file { color: var(--text); border-style: solid; }
+  .dropzone img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+  .dropzone input { display: none; }
+
   .result-card {
     margin-top: 34px;
     width: 100%;
@@ -135,7 +150,10 @@
     position: relative;
     background: var(--bg-soft);
   }
-  .canvas-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; animation: reveal 0.4s ease; }
+  .canvas-wrap img, .canvas-wrap canvas {
+    max-width: 100%; max-height: 100%; width: auto; height: auto;
+    display: block; animation: reveal 0.4s ease;
+  }
   @keyframes reveal { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
   .placeholder { color: var(--text-faint); font-size: 0.9rem; text-align: center; padding: 20px; }
   .spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
@@ -148,6 +166,12 @@
   }
   .spinner-label { color: var(--text-faint); font-size: 0.8rem; }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-text {
+    padding: 16px 18px; border-top: 1px solid var(--border);
+    color: var(--text-dim); font-size: 0.9rem; line-height: 1.5;
+  }
+  .result-text[hidden] { display: none; }
 
   .result-footer {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
@@ -196,21 +220,31 @@
   </header>
 
   <div class="mode-toggle" id="mode-toggle">
-    <button type="button" class="mode-btn active" data-mode="art">🎨 Arte astratta</button>
-    <button type="button" class="mode-btn" data-mode="ai">🖼️ Immagine AI</button>
-    <button type="button" class="mode-btn" data-mode="cf">☁️ Cloudflare AI</button>
+    <button type="button" class="mode-btn active" data-mode="generate">✨ Testo → Immagine</button>
+    <button type="button" class="mode-btn" data-mode="describe">📝 Descrivi immagine</button>
+    <button type="button" class="mode-btn" data-mode="detect">🔎 Rileva oggetti</button>
   </div>
 
-  <form id="form">
+  <form id="text-form">
     <textarea id="prompt" placeholder="" maxlength="200"></textarea>
-    <button type="submit" class="submit" id="submit-btn">Genera</button>
+    <button type="submit" class="submit" id="text-submit-btn">Genera</button>
   </form>
-  <p class="kbd-hint">Invio per generare · <kbd>Shift</kbd>+<kbd>Invio</kbd> per andare a capo</p>
+
+  <form id="upload-form" hidden>
+    <label class="dropzone" id="dropzone" for="file-input">
+      <span id="dropzone-label">Scegli o trascina un'immagine</span>
+      <input type="file" id="file-input" accept="image/*" />
+    </label>
+    <button type="submit" class="submit" id="upload-submit-btn" disabled>Analizza</button>
+  </form>
+
+  <p class="kbd-hint" id="kbd-hint">Invio per generare · <kbd>Shift</kbd>+<kbd>Invio</kbd> per andare a capo</p>
 
   <div class="result-card">
     <div class="canvas-wrap" id="canvas-wrap">
-      <div class="placeholder" id="placeholder">La tua immagine apparirà qui</div>
+      <div class="placeholder" id="placeholder">Il risultato apparirà qui</div>
     </div>
+    <p class="result-text" id="result-text" hidden></p>
     <div class="result-footer" id="result-footer" hidden>
       <span class="meta" id="meta"></span>
       <a id="open-link" href="#" target="_blank" rel="noopener">Apri a schermo intero ↗</a>
@@ -220,15 +254,22 @@
 
   <footer>
     <a href="https://github.com/stracquadanionicola/generative-art" target="_blank" rel="noopener">codice sorgente</a>
-    · nessun dato personale salvato
+    · powered by Cloudflare Workers AI
   </footer>
 </div>
 
 <script>
-  const form = document.getElementById("form");
+  const textForm = document.getElementById("text-form");
+  const uploadForm = document.getElementById("upload-form");
   const promptEl = document.getElementById("prompt");
-  const submitBtn = document.getElementById("submit-btn");
+  const textSubmitBtn = document.getElementById("text-submit-btn");
+  const uploadSubmitBtn = document.getElementById("upload-submit-btn");
+  const dropzone = document.getElementById("dropzone");
+  const dropzoneLabel = document.getElementById("dropzone-label");
+  const fileInput = document.getElementById("file-input");
+  const kbdHint = document.getElementById("kbd-hint");
   const canvasWrap = document.getElementById("canvas-wrap");
+  const resultText = document.getElementById("result-text");
   const resultFooter = document.getElementById("result-footer");
   const openLink = document.getElementById("open-link");
   const errorEl = document.getElementById("error");
@@ -237,53 +278,98 @@
   const modeBtns = document.querySelectorAll(".mode-btn");
 
   const MODES = {
-    art: {
-      endpoint: "/generate",
-      hint: "Descrivi un'atmosfera (colori, mood, stile) — genera un'immagine astratta procedurale, nessuna AI testuale.",
-      placeholder: "es. tramonto caotico e infuocato",
-      spinnerLabel: "Generazione in corso…",
-    },
-    ai: {
-      endpoint: "/generate_ai",
-      hint: "Descrivi un soggetto reale — generato tramite pollinations.ai, servizio gratuito. Può richiedere 10-20 secondi.",
+    generate: {
+      kind: "text",
+      endpoint: "/cf/text-to-image",
+      hint: "Descrivi l'immagine che vuoi creare — generata da zero tramite Cloudflare Workers AI (Flux).",
       placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
-      spinnerLabel: "Generazione AI in corso (può richiedere fino a 20s)…",
+      spinnerLabel: "Generazione in corso (può richiedere qualche secondo)…",
     },
-    cf: {
-      endpoint: "/generate_cf",
-      hint: "Come 'Immagine AI', ma tramite Cloudflare Workers AI (modello Flux). Richiede il file .env configurato con le tue credenziali.",
-      placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
-      spinnerLabel: "Generazione via Cloudflare in corso…",
+    describe: {
+      kind: "upload",
+      endpoint: "/cf/describe",
+      hint: "Carica un'immagine: un modello visione (LLaVA) la osserva e ne scrive una descrizione.",
+      spinnerLabel: "Analisi dell'immagine in corso…",
+    },
+    detect: {
+      kind: "upload",
+      endpoint: "/cf/detect",
+      hint: "Carica un'immagine: viene rilevato ogni oggetto riconoscibile, con etichetta e riquadro.",
+      spinnerLabel: "Rilevamento oggetti in corso…",
     },
   };
 
-  let mode = "art";
+  let mode = "generate";
+  let selectedFile = null;
 
   function applyMode(newMode) {
     mode = newMode;
     modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
     const cfg = MODES[mode];
     hintEl.textContent = cfg.hint;
-    promptEl.placeholder = cfg.placeholder;
+
+    const isText = cfg.kind === "text";
+    textForm.hidden = !isText;
+    uploadForm.hidden = isText;
+    kbdHint.hidden = !isText;
+    if (isText) promptEl.placeholder = cfg.placeholder;
   }
 
   modeBtns.forEach((b) => b.addEventListener("click", () => applyMode(b.dataset.mode)));
-  applyMode("art");
+  applyMode("generate");
 
-  function finish() {
-    submitBtn.disabled = false;
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("drag");
+    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) setFile(fileInput.files[0]);
+  });
+
+  function setFile(file) {
+    selectedFile = file;
+    uploadSubmitBtn.disabled = false;
+    dropzone.classList.add("has-file");
+    const url = URL.createObjectURL(file);
+    dropzoneLabel.textContent = file.name;
+    const thumb = document.createElement("img");
+    thumb.src = url;
+    dropzone.querySelector("img")?.remove();
+    dropzone.prepend(thumb);
   }
 
-  async function generate(prompt) {
+  function resetResultArea(spinnerLabel) {
     errorEl.hidden = true;
     resultFooter.hidden = true;
-    submitBtn.disabled = true;
-    const cfg = MODES[mode];
-    canvasWrap.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">${cfg.spinnerLabel}</div></div>`;
+    resultText.hidden = true;
+    canvasWrap.style.aspectRatio = "1 / 1";
+    canvasWrap.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">${spinnerLabel}</div></div>`;
+  }
+
+  function showError(message) {
+    canvasWrap.innerHTML = '<div class="placeholder">Nessun risultato</div>';
+    errorEl.textContent = message;
+    errorEl.hidden = false;
+  }
+
+  function loadLocalImage(file) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function generateFromText(prompt) {
+    resetResultArea(MODES.generate.spinnerLabel);
+    textSubmitBtn.disabled = true;
 
     let data;
     try {
-      const res = await fetch(cfg.endpoint, {
+      const res = await fetch(MODES.generate.endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
@@ -291,45 +377,131 @@
       data = await res.json();
       if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
     } catch (err) {
-      canvasWrap.innerHTML = '<div class="placeholder">Nessuna immagine</div>';
-      errorEl.textContent = err.message;
-      errorEl.hidden = false;
-      finish();
+      showError(err.message);
+      textSubmitBtn.disabled = false;
       return;
     }
 
     const img = new Image();
     img.alt = prompt;
     img.onload = () => {
+      canvasWrap.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
       canvasWrap.innerHTML = "";
       canvasWrap.appendChild(img);
       const p = data.params;
-      metaEl.textContent = (mode === "ai" || mode === "cf")
-        ? `sorgente: ${p.source} · seed: ${p.seed}`
-        : `palette: ${p.palette} · particelle: ${p.particles} · ottave: ${p.octaves} · seed: ${p.seed}`;
+      metaEl.textContent = `sorgente: ${p.source} · seed: ${p.seed}`;
       openLink.href = data.image_url;
       resultFooter.hidden = false;
-      finish();
+      textSubmitBtn.disabled = false;
     };
     img.onerror = () => {
-      canvasWrap.innerHTML = '<div class="placeholder">Impossibile caricare l\'immagine (servizio non disponibile, riprova)</div>';
-      finish();
+      showError("Impossibile caricare l'immagine generata.");
+      textSubmitBtn.disabled = false;
     };
     img.src = data.image_url;
   }
 
-  form.addEventListener("submit", (e) => {
+  async function describeImage(file) {
+    resetResultArea(MODES.describe.spinnerLabel);
+    uploadSubmitBtn.disabled = true;
+
+    const localImg = await loadLocalImage(file);
+    canvasWrap.style.aspectRatio = `${localImg.naturalWidth} / ${localImg.naturalHeight}`;
+
+    const form = new FormData();
+    form.append("image", file);
+
+    let data;
+    try {
+      const res = await fetch(MODES.describe.endpoint, { method: "POST", body: form });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
+    } catch (err) {
+      showError(err.message);
+      uploadSubmitBtn.disabled = false;
+      return;
+    }
+
+    canvasWrap.innerHTML = "";
+    canvasWrap.appendChild(localImg);
+    resultText.textContent = data.description;
+    resultText.hidden = false;
+    uploadSubmitBtn.disabled = false;
+  }
+
+  async function detectObjects(file) {
+    resetResultArea(MODES.detect.spinnerLabel);
+    uploadSubmitBtn.disabled = true;
+
+    const localImg = await loadLocalImage(file);
+    canvasWrap.style.aspectRatio = `${localImg.naturalWidth} / ${localImg.naturalHeight}`;
+
+    const form = new FormData();
+    form.append("image", file);
+
+    let data;
+    try {
+      const res = await fetch(MODES.detect.endpoint, { method: "POST", body: form });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
+    } catch (err) {
+      showError(err.message);
+      uploadSubmitBtn.disabled = false;
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = localImg.naturalWidth;
+    canvas.height = localImg.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(localImg, 0, 0);
+
+    const objects = data.objects || [];
+    ctx.lineWidth = Math.max(2, canvas.width / 300);
+    ctx.font = `${Math.max(14, canvas.width / 50)}px sans-serif`;
+    ctx.textBaseline = "top";
+    objects.forEach((obj, i) => {
+      const hue = (i * 47) % 360;
+      const color = `hsl(${hue} 90% 60%)`;
+      const { xmin, ymin, xmax, ymax } = obj.box;
+      ctx.strokeStyle = color;
+      ctx.strokeRect(xmin, ymin, xmax - xmin, ymax - ymin);
+      const label = `${obj.label} ${Math.round(obj.score * 100)}%`;
+      const textWidth = ctx.measureText(label).width;
+      ctx.fillStyle = color;
+      ctx.fillRect(xmin, ymin, textWidth + 8, parseInt(ctx.font, 10) + 6);
+      ctx.fillStyle = "#0a0221";
+      ctx.fillText(label, xmin + 4, ymin + 3);
+    });
+
+    canvasWrap.innerHTML = "";
+    canvasWrap.appendChild(canvas);
+    resultText.textContent = objects.length
+      ? `${objects.length} ${objects.length === 1 ? "oggetto rilevato" : "oggetti rilevati"}: ${objects.map((o) => o.label).join(", ")}`
+      : "Nessun oggetto riconosciuto in questa immagine.";
+    resultText.hidden = false;
+    uploadSubmitBtn.disabled = false;
+  }
+
+  textForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const prompt = promptEl.value.trim();
     if (!prompt) return;
-    generate(prompt);
+    generateFromText(prompt);
   });
 
   promptEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      form.requestSubmit();
+      textForm.requestSubmit();
     }
+  });
+
+  uploadForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+    if (mode === "describe") describeImage(selectedFile);
+    else if (mode === "detect") detectObjects(selectedFile);
   });
 </script>
 </body>
