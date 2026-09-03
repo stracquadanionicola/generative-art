@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Aetheria Studio — Generatore di Immagini</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2246%22 fill=%22%230b0033%22/><path d=%22M20 65 Q35 20 50 55 T80 30%22 stroke=%22%23ff6f3c%22 stroke-width=%228%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0221;
+    --bg-soft: #150a3a;
+    --bg-elevated: #1b1148;
+    --border: #362a6b;
+    --text: #f2f0ff;
+    --text-dim: #b6aee0;
+    --text-faint: #6f63a3;
+    --accent: #ff6f3c;
+    --accent-2: #ffcd3c;
+    --danger: #ff8a8a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(ellipse 800px 500px at 15% -5%, rgba(255,111,60,0.16), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 90% 10%, rgba(233,144,255,0.10), transparent 55%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+  .page {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 20px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header { text-align: center; margin-bottom: 32px; }
+  .logo {
+    font-family: "Space Grotesk", sans-serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 8px;
+    background: linear-gradient(120deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  p.hint { color: var(--text-dim); margin: 0 auto; font-size: 0.92rem; line-height: 1.5; text-align: center; max-width: 460px; min-height: 2.7em; }
+
+  .mode-toggle {
+    display: flex; gap: 4px; margin: 26px 0 22px;
+    background: var(--bg-soft); padding: 5px; border-radius: 14px; border: 1px solid var(--border);
+  }
+  .mode-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 16px; border-radius: 10px; border: none; background: transparent;
+    color: var(--text-dim); font-size: 0.85rem; font-weight: 500; font-family: inherit; cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+  }
+  .mode-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
+  .mode-btn.active { background: var(--accent); color: #1a0a00; font-weight: 600; }
+
+  form {
+    width: 100%;
+    max-width: 580px;
+    display: flex;
+    gap: 10px;
+  }
+  textarea {
+    flex: 1;
+    resize: none;
+    height: 54px;
+    padding: 15px 16px;
+    border-radius: 13px;
+    border: 1px solid var(--border);
+    background: var(--bg-soft);
+    color: var(--text);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  textarea::placeholder { color: var(--text-faint); }
+  textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,111,60,0.18); }
+  button.submit {
+    padding: 0 24px;
+    border-radius: 13px;
+    border: none;
+    background: var(--accent);
+    color: #1a0a00;
+    font-weight: 600;
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.1s ease;
+  }
+  button.submit:hover:not(:disabled) { filter: brightness(1.08); }
+  button.submit:active:not(:disabled) { transform: scale(0.97); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .examples { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 580px; }
+  .examples button {
+    background: var(--bg-soft); color: #cfc6f7; font-weight: 400; font-size: 0.78rem; font-family: inherit;
+    padding: 7px 13px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .examples button:hover { border-color: var(--accent); color: var(--text); }
+
+  .result-card {
+    margin-top: 34px;
+    width: 100%;
+    max-width: 640px;
+    border-radius: 20px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  .canvas-wrap {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    background: var(--bg-soft);
+  }
+  .canvas-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; animation: reveal 0.4s ease; }
+  @keyframes reveal { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
+  .placeholder { color: var(--text-faint); font-size: 0.9rem; text-align: center; padding: 20px; }
+  .spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  .spinner-label { color: var(--text-faint); font-size: 0.8rem; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .result-footer {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 18px; border-top: 1px solid var(--border);
+  }
+  .result-footer[hidden] { display: none; }
+  .meta { color: var(--text-faint); font-size: 0.76rem; }
+  .result-footer a {
+    color: var(--text-dim); font-size: 0.8rem; text-decoration: none;
+    border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .result-footer a:hover { border-color: var(--accent); color: var(--text); }
+
+  .error { color: var(--danger); margin-top: 14px; font-size: 0.88rem; text-align: center; max-width: 500px; }
+
+  footer { margin-top: 56px; color: var(--text-faint); font-size: 0.76rem; text-align: center; }
+  footer a { color: var(--text-dim); }
+
+  @media (max-width: 520px) {
+    form { flex-direction: column; }
+    button.submit { padding: 13px; }
+    .mode-toggle { flex-wrap: wrap; justify-content: center; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <p class="logo">✦ Aetheria Studio</p>
+    <p class="hint" id="hint"></p>
+  </header>
+
+  <div class="mode-toggle" id="mode-toggle">
+    <button type="button" class="mode-btn active" data-mode="art">🎨 Arte astratta</button>
+    <button type="button" class="mode-btn" data-mode="ai">🖼️ Immagine AI</button>
+    <button type="button" class="mode-btn" data-mode="cf">☁️ Cloudflare AI</button>
+  </div>
+
+  <form id="form">
+    <textarea id="prompt" placeholder="" maxlength="200"></textarea>
+    <button type="submit" class="submit" id="submit-btn">Genera</button>
+  </form>
+
+  <div class="examples" id="examples"></div>
+
+  <div class="result-card">
+    <div class="canvas-wrap" id="canvas-wrap">
+      <div class="placeholder" id="placeholder">La tua immagine apparirà qui</div>
+    </div>
+    <div class="result-footer" id="result-footer" hidden>
+      <span class="meta" id="meta"></span>
+      <a id="open-link" href="#" target="_blank" rel="noopener">Apri a schermo intero ↗</a>
+    </div>
+  </div>
+  <div class="error" id="error" hidden></div>
+
+  <footer>generatore locale · nessun dato salvato oltre questa macchina</footer>
+</div>
+
+<script>
+  const form = document.getElementById("form");
+  const promptEl = document.getElementById("prompt");
+  const submitBtn = document.getElementById("submit-btn");
+  const canvasWrap = document.getElementById("canvas-wrap");
+  const resultFooter = document.getElementById("result-footer");
+  const openLink = document.getElementById("open-link");
+  const errorEl = document.getElementById("error");
+  const metaEl = document.getElementById("meta");
+  const hintEl = document.getElementById("hint");
+  const examplesEl = document.getElementById("examples");
+  const modeBtns = document.querySelectorAll(".mode-btn");
+
+  const MODES = {
+    art: {
+      endpoint: "/generate",
+      hint: "Descrivi un'atmosfera (colori, mood, stile) — genera un'immagine astratta procedurale, nessuna AI testuale.",
+      placeholder: "es. tramonto caotico e infuocato",
+      examples: [
+        "tramonto caotico e infuocato",
+        "oceano calmo e minimale",
+        "foresta fluida e serena",
+        "neon cyberpunk frastagliato",
+      ],
+      spinnerLabel: "Generazione in corso…",
+    },
+    ai: {
+      endpoint: "/generate_ai",
+      hint: "Descrivi un soggetto reale — generato tramite pollinations.ai, servizio gratuito. Può richiedere 10-20 secondi.",
+      placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
+      examples: [
+        "un gatto arancione seduto su un tetto, stile acquerello",
+        "un'astronave sopra una città futuristica al tramonto",
+        "un castello fantasy tra le montagne innevate",
+        "un cane robot in stile cartone animato",
+      ],
+      spinnerLabel: "Generazione AI in corso (può richiedere fino a 20s)…",
+    },
+    cf: {
+      endpoint: "/generate_cf",
+      hint: "Come 'Immagine AI', ma tramite Cloudflare Workers AI (modello Flux). Richiede il file .env configurato con le tue credenziali.",
+      placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
+      examples: [
+        "un gatto arancione seduto su un tetto, stile acquerello",
+        "un'astronave sopra una città futuristica al tramonto",
+        "un castello fantasy tra le montagne innevate",
+        "un cane robot in stile cartone animato",
+      ],
+      spinnerLabel: "Generazione via Cloudflare in corso…",
+    },
+  };
+
+  let mode = "art";
+
+  function applyMode(newMode) {
+    mode = newMode;
+    modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
+    const cfg = MODES[mode];
+    hintEl.textContent = cfg.hint;
+    promptEl.placeholder = cfg.placeholder;
+    examplesEl.innerHTML = "";
+    cfg.examples.forEach((ex) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = ex;
+      b.addEventListener("click", () => {
+        promptEl.value = ex;
+        form.requestSubmit();
+      });
+      examplesEl.appendChild(b);
+    });
+  }
+
+  modeBtns.forEach((b) => b.addEventListener("click", () => applyMode(b.dataset.mode)));
+  applyMode("art");
+
+  function finish() {
+    submitBtn.disabled = false;
+  }
+
+  async function generate(prompt) {
+    errorEl.hidden = true;
+    resultFooter.hidden = true;
+    submitBtn.disabled = true;
+    const cfg = MODES[mode];
+    canvasWrap.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">${cfg.spinnerLabel}</div></div>`;
+
+    let data;
+    try {
+      const res = await fetch(cfg.endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt }),
+      });
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
+    } catch (err) {
+      canvasWrap.innerHTML = '<div class="placeholder">Nessuna immagine</div>';
+      errorEl.textContent = err.message;
+      errorEl.hidden = false;
+      finish();
+      return;
+    }
+
+    const img = new Image();
+    img.alt = prompt;
+    img.onload = () => {
+      canvasWrap.innerHTML = "";
+      canvasWrap.appendChild(img);
+      const p = data.params;
+      metaEl.textContent = (mode === "ai" || mode === "cf")
+        ? `sorgente: ${p.source} · seed: ${p.seed}`
+        : `palette: ${p.palette} · particelle: ${p.particles} · ottave: ${p.octaves} · seed: ${p.seed}`;
+      openLink.href = data.image_url;
+      resultFooter.hidden = false;
+      finish();
+    };
+    img.onerror = () => {
+      canvasWrap.innerHTML = '<div class="placeholder">Impossibile caricare l\'immagine (servizio non disponibile, riprova)</div>';
+      finish();
+    };
+    img.src = data.image_url;
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const prompt = promptEl.value.trim();
+    if (!prompt) return;
+    generate(prompt);
+  });
+</script>
+</body>
+</html>
