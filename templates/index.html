@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Aetheria Studio — Generatore di Immagini</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2246%22 fill=%22%230b0033%22/><path d=%22M20 65 Q35 20 50 55 T80 30%22 stroke=%22%23ff6f3c%22 stroke-width=%228%22 fill=%22none%22 stroke-linecap=%22round%22/></svg>" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23ff6f3c'/%3E%3Cstop offset='1' stop-color='%23ffcd3c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23150a3a'/%3E%3Cpath d='M22 72 C28 44 42 26 70 21' stroke='url(%23g)' stroke-width='9' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='72' cy='22' r='8' fill='url(%23g)'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -44,12 +44,13 @@
   }
 
   header { text-align: center; margin-bottom: 32px; }
-  .logo {
+  .brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 10px; }
+  .brand svg { width: 30px; height: 30px; flex-shrink: 0; }
+  .brand span {
     font-family: "Space Grotesk", sans-serif;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.01em;
-    margin: 0 0 8px;
     background: linear-gradient(120deg, var(--accent), var(--accent-2));
     -webkit-background-clip: text;
     background-clip: text;
@@ -108,13 +109,11 @@
   button.submit:active:not(:disabled) { transform: scale(0.97); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .examples { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 580px; }
-  .examples button {
-    background: var(--bg-soft); color: #cfc6f7; font-weight: 400; font-size: 0.78rem; font-family: inherit;
-    padding: 7px 13px; border: 1px solid var(--border); border-radius: 9px; cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
+  .kbd-hint { margin-top: 10px; color: var(--text-faint); font-size: 0.74rem; text-align: center; }
+  .kbd-hint kbd {
+    font-family: inherit; background: var(--bg-soft); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 6px; font-size: 0.72rem;
   }
-  .examples button:hover { border-color: var(--accent); color: var(--text); }
 
   .result-card {
     margin-top: 34px;
@@ -166,7 +165,8 @@
   .error { color: var(--danger); margin-top: 14px; font-size: 0.88rem; text-align: center; max-width: 500px; }
 
   footer { margin-top: 56px; color: var(--text-faint); font-size: 0.76rem; text-align: center; }
-  footer a { color: var(--text-dim); }
+  footer a { color: var(--text-dim); text-decoration: none; border-bottom: 1px solid var(--border); }
+  footer a:hover { color: var(--text); border-color: var(--accent); }
 
   @media (max-width: 520px) {
     form { flex-direction: column; }
@@ -178,7 +178,20 @@
 <body>
 <div class="page">
   <header>
-    <p class="logo">✦ Aetheria Studio</p>
+    <div class="brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="logo-g" x1="0" y1="1" x2="1" y2="0">
+            <stop offset="0" stop-color="#ff6f3c" />
+            <stop offset="1" stop-color="#ffcd3c" />
+          </linearGradient>
+        </defs>
+        <rect width="100" height="100" rx="24" fill="#150a3a" />
+        <path d="M22 72 C28 44 42 26 70 21" stroke="url(#logo-g)" stroke-width="9" fill="none" stroke-linecap="round" />
+        <circle cx="72" cy="22" r="8" fill="url(#logo-g)" />
+      </svg>
+      <span>Aetheria Studio</span>
+    </div>
     <p class="hint" id="hint"></p>
   </header>
 
@@ -192,8 +205,7 @@
     <textarea id="prompt" placeholder="" maxlength="200"></textarea>
     <button type="submit" class="submit" id="submit-btn">Genera</button>
   </form>
-
-  <div class="examples" id="examples"></div>
+  <p class="kbd-hint">Invio per generare · <kbd>Shift</kbd>+<kbd>Invio</kbd> per andare a capo</p>
 
   <div class="result-card">
     <div class="canvas-wrap" id="canvas-wrap">
@@ -206,7 +218,10 @@
   </div>
   <div class="error" id="error" hidden></div>
 
-  <footer>generatore locale · nessun dato salvato oltre questa macchina</footer>
+  <footer>
+    <a href="https://github.com/stracquadanionicola/generative-art" target="_blank" rel="noopener">codice sorgente</a>
+    · nessun dato personale salvato
+  </footer>
 </div>
 
 <script>
@@ -219,7 +234,6 @@
   const errorEl = document.getElementById("error");
   const metaEl = document.getElementById("meta");
   const hintEl = document.getElementById("hint");
-  const examplesEl = document.getElementById("examples");
   const modeBtns = document.querySelectorAll(".mode-btn");
 
   const MODES = {
@@ -227,36 +241,18 @@
       endpoint: "/generate",
       hint: "Descrivi un'atmosfera (colori, mood, stile) — genera un'immagine astratta procedurale, nessuna AI testuale.",
       placeholder: "es. tramonto caotico e infuocato",
-      examples: [
-        "tramonto caotico e infuocato",
-        "oceano calmo e minimale",
-        "foresta fluida e serena",
-        "neon cyberpunk frastagliato",
-      ],
       spinnerLabel: "Generazione in corso…",
     },
     ai: {
       endpoint: "/generate_ai",
       hint: "Descrivi un soggetto reale — generato tramite pollinations.ai, servizio gratuito. Può richiedere 10-20 secondi.",
       placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
-      examples: [
-        "un gatto arancione seduto su un tetto, stile acquerello",
-        "un'astronave sopra una città futuristica al tramonto",
-        "un castello fantasy tra le montagne innevate",
-        "un cane robot in stile cartone animato",
-      ],
       spinnerLabel: "Generazione AI in corso (può richiedere fino a 20s)…",
     },
     cf: {
       endpoint: "/generate_cf",
       hint: "Come 'Immagine AI', ma tramite Cloudflare Workers AI (modello Flux). Richiede il file .env configurato con le tue credenziali.",
       placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
-      examples: [
-        "un gatto arancione seduto su un tetto, stile acquerello",
-        "un'astronave sopra una città futuristica al tramonto",
-        "un castello fantasy tra le montagne innevate",
-        "un cane robot in stile cartone animato",
-      ],
       spinnerLabel: "Generazione via Cloudflare in corso…",
     },
   };
@@ -269,17 +265,6 @@
     const cfg = MODES[mode];
     hintEl.textContent = cfg.hint;
     promptEl.placeholder = cfg.placeholder;
-    examplesEl.innerHTML = "";
-    cfg.examples.forEach((ex) => {
-      const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = ex;
-      b.addEventListener("click", () => {
-        promptEl.value = ex;
-        form.requestSubmit();
-      });
-      examplesEl.appendChild(b);
-    });
   }
 
   modeBtns.forEach((b) => b.addEventListener("click", () => applyMode(b.dataset.mode)));
@@ -338,6 +323,13 @@
     const prompt = promptEl.value.trim();
     if (!prompt) return;
     generate(prompt);
+  });
+
+  promptEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      form.requestSubmit();
+    }
   });
 </script>
 </body>
