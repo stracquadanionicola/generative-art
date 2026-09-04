@@ -48,17 +48,23 @@
     align-items: center;
   }
 
-  .topbar { width: 100%; display: flex; justify-content: flex-end; margin-bottom: 12px; min-height: 30px; }
+  .account-area { width: 100%; max-width: 320px; margin: 0 0 20px auto; }
+  .topbar {
+    width: 100%; display: flex; align-items: center; justify-content: flex-end;
+    gap: 8px; min-height: 30px; line-height: 1;
+  }
   .auth-link {
     background: none; border: none; color: var(--text-dim); font-family: inherit;
-    font-size: 0.82rem; cursor: pointer; padding: 4px 2px;
+    font-size: 0.82rem; line-height: 1; cursor: pointer; padding: 4px 2px; margin: 0;
   }
   .auth-link:hover { color: var(--text); }
-  .auth-sep { color: var(--text-faint); margin: 0 8px; font-size: 0.82rem; }
-  .auth-username { color: var(--text); font-weight: 600; font-size: 0.82rem; }
+  .auth-sep { color: var(--text-faint); font-size: 0.82rem; line-height: 1; }
+  .auth-username {
+    color: var(--text); font-weight: 600; font-size: 0.82rem; line-height: 1; padding: 4px 2px;
+  }
 
   .auth-panel {
-    width: 100%; max-width: 320px; margin-bottom: 20px;
+    width: 100%; margin-top: 12px;
     background: var(--bg-soft); border: 1px solid var(--border); border-radius: 18px;
     padding: 18px; display: flex; flex-direction: column; gap: 10px;
   }
@@ -71,6 +77,28 @@
   .auth-panel input:focus { outline: none; border-color: var(--accent-rose); }
   .auth-panel button.submit { width: 100%; padding: 11px; }
   .auth-panel .error { margin: 0; font-size: 0.8rem; }
+
+  .account-panel {
+    width: 100%; margin-top: 12px;
+    background: var(--bg-soft); border: 1px solid var(--border); border-radius: 18px;
+    padding: 16px;
+  }
+  .account-panel[hidden] { display: none; }
+  .account-panel .history-title {
+    font-family: "Playfair Display", serif; font-size: 0.95rem; font-weight: 600;
+    color: var(--text); text-align: left; margin: 0 0 12px;
+  }
+  .account-panel .history-empty { color: var(--text-faint); font-size: 0.82rem; margin: 0; }
+  .account-panel .history-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    max-height: 260px; overflow-y: auto; padding-right: 2px;
+  }
+  .history-grid a {
+    display: block; aspect-ratio: 1/1; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border); background: var(--bg-elevated);
+  }
+  .history-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
+  .history-grid a:hover img { transform: scale(1.06); }
 
   header { text-align: center; margin-bottom: 34px; position: relative; }
   .eyebrow {
@@ -188,22 +216,6 @@
 
   .error { color: var(--danger); margin-top: 16px; font-size: 0.88rem; text-align: center; max-width: 500px; }
 
-  .history-section { width: 100%; max-width: 640px; margin-top: 48px; }
-  .history-section[hidden] { display: none; }
-  .history-title {
-    font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 600;
-    color: var(--text); text-align: center; margin: 0 0 18px;
-  }
-  .history-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;
-  }
-  .history-grid a {
-    display: block; aspect-ratio: 1/1; border-radius: 12px; overflow: hidden;
-    border: 1px solid var(--border); background: var(--bg-soft);
-  }
-  .history-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
-  .history-grid a:hover img { transform: scale(1.06); }
-
   footer { margin-top: 60px; color: var(--text-faint); font-size: 0.76rem; text-align: center; line-height: 1.8; }
   footer a { color: var(--text-dim); text-decoration: none; border-bottom: 1px solid var(--border); }
   footer a:hover { color: var(--text); border-color: var(--accent-rose); }
@@ -216,15 +228,23 @@
 </head>
 <body>
 <div class="page">
-  <div class="topbar" id="topbar"></div>
+  <div class="account-area">
+    <div class="topbar" id="topbar"></div>
 
-  <div class="auth-panel" id="auth-panel" hidden>
-    <form id="auth-form">
-      <input type="text" id="auth-username-input" placeholder="Username" autocomplete="username" />
-      <input type="password" id="auth-password-input" placeholder="Password" autocomplete="current-password" />
-      <button type="submit" class="submit" id="auth-submit-btn">Accedi</button>
-    </form>
-    <p class="error" id="auth-error" hidden></p>
+    <div class="auth-panel" id="auth-panel" hidden>
+      <form id="auth-form">
+        <input type="text" id="auth-username-input" placeholder="Username" autocomplete="username" />
+        <input type="password" id="auth-password-input" placeholder="Password" autocomplete="current-password" />
+        <button type="submit" class="submit" id="auth-submit-btn">Accedi</button>
+      </form>
+      <p class="error" id="auth-error" hidden></p>
+    </div>
+
+    <div class="account-panel" id="account-panel" hidden>
+      <p class="history-title">La tua cronologia</p>
+      <div class="history-grid" id="history-grid"></div>
+      <p class="history-empty" id="history-empty" hidden>Genera la tua prima immagine per iniziare la cronologia.</p>
+    </div>
   </div>
 
   <header>
@@ -267,11 +287,6 @@
   </div>
   <div class="error" id="error" hidden></div>
 
-  <section class="history-section" id="history-section" hidden>
-    <p class="history-title">La tua cronologia</p>
-    <div class="history-grid" id="history-grid"></div>
-  </section>
-
   <footer>
     Creato da Stracquadanio Nicola<br />
     <a href="https://github.com/stracquadanionicola/generative-art" target="_blank" rel="noopener">codice sorgente</a>
@@ -298,8 +313,9 @@
   const shareBtn = document.getElementById("share-btn");
   const errorEl = document.getElementById("error");
   const metaEl = document.getElementById("meta");
-  const historySection = document.getElementById("history-section");
+  const accountPanel = document.getElementById("account-panel");
   const historyGrid = document.getElementById("history-grid");
+  const historyEmpty = document.getElementById("history-empty");
 
   let authMode = "login";
   let currentUser = null;
@@ -357,7 +373,7 @@
       span.textContent = `Ciao, ${currentUser}`;
       const sep = document.createElement("span");
       sep.className = "auth-sep";
-      sep.textContent = "·";
+      sep.textContent = "-";
       const logoutBtn = document.createElement("button");
       logoutBtn.type = "button";
       logoutBtn.className = "auth-link";
@@ -372,7 +388,7 @@
       loginBtn.addEventListener("click", () => openAuthPanel("login"));
       const sep = document.createElement("span");
       sep.className = "auth-sep";
-      sep.textContent = "·";
+      sep.textContent = "-";
       const registerBtn = document.createElement("button");
       registerBtn.type = "button";
       registerBtn.className = "auth-link";
@@ -423,21 +439,21 @@
     await fetch("/logout", { method: "POST" });
     currentUser = null;
     renderTopbar();
-    historySection.hidden = true;
+    accountPanel.hidden = true;
     historyGrid.innerHTML = "";
   }
 
   async function loadHistory() {
     if (!currentUser) return;
+    accountPanel.hidden = false;
     try {
       const res = await fetch("/history");
       const data = await res.json();
       historyGrid.innerHTML = "";
-      if (!data.images || !data.images.length) {
-        historySection.hidden = true;
-        return;
-      }
-      data.images.forEach((img) => {
+      const images = data.images || [];
+      historyEmpty.hidden = images.length > 0;
+      historyGrid.hidden = images.length === 0;
+      images.forEach((img) => {
         const a = document.createElement("a");
         a.href = img.image_url;
         a.target = "_blank";
@@ -450,23 +466,22 @@
         a.appendChild(image);
         historyGrid.appendChild(a);
       });
-      historySection.hidden = false;
     } catch {
-      historySection.hidden = true;
+      historyEmpty.hidden = false;
+      historyGrid.hidden = true;
     }
   }
 
   async function init() {
-    renderTopbar();
     try {
       const res = await fetch("/me");
       const data = await res.json();
       if (data.username) {
         currentUser = data.username;
-        renderTopbar();
         loadHistory();
       }
     } catch {}
+    renderTopbar();
   }
   init();
 
