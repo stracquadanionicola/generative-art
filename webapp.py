@@ -6,17 +6,16 @@ import secrets
 import time
 
 import requests
-from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask import Flask, Response, jsonify, render_template, request
 from flask_login import (
     LoginManager, UserMixin, current_user, login_required, login_user, logout_user,
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import db
+import storage
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-OUTPUT_DIR = os.path.join(BASE_DIR, "output")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 def load_dotenv(path):
@@ -192,8 +191,7 @@ def cf_text_to_image():
     image_bytes = base64.b64decode(payload["result"]["image"])
     seed = seed_from(prompt)
     filename = f"cf_{seed}_{int(time.time())}.png"
-    with open(os.path.join(OUTPUT_DIR, filename), "wb") as f:
-        f.write(image_bytes)
+    storage.put(filename, image_bytes)
 
     if current_user.is_authenticated:
         db.save_image(int(current_user.id), prompt, seed, filename)
@@ -210,7 +208,10 @@ def cf_text_to_image():
 
 @app.route("/output/<path:filename>")
 def output_file(filename):
-    return send_from_directory(OUTPUT_DIR, filename)
+    data = storage.get(filename)
+    if data is None:
+        return jsonify({"error": "Immagine non trovata."}), 404
+    return Response(data, mimetype="image/png")
 
 
 if __name__ == "__main__":
