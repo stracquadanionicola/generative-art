@@ -48,10 +48,10 @@
     align-items: center;
   }
 
-  .account-area { width: 100%; max-width: 320px; margin: 0 0 20px auto; }
+  .account-area { width: 100%; max-width: 320px; margin: 0 auto 20px; position: relative; }
   .topbar {
-    width: 100%; display: flex; align-items: center; justify-content: flex-end;
-    gap: 8px; min-height: 30px; line-height: 1;
+    width: 100%; display: flex; align-items: center; justify-content: center;
+    gap: 8px; min-height: 36px; line-height: 1;
   }
   .auth-link {
     background: none; border: none; color: var(--text-dim); font-family: inherit;
@@ -59,9 +59,15 @@
   }
   .auth-link:hover { color: var(--text); }
   .auth-sep { color: var(--text-faint); font-size: 0.82rem; line-height: 1; }
-  .auth-username {
-    color: var(--text); font-weight: 600; font-size: 0.82rem; line-height: 1; padding: 4px 2px;
+
+  .avatar-btn {
+    width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+    background: var(--accent); color: var(--cream); font-family: "Playfair Display", serif;
+    font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s ease, box-shadow 0.15s ease;
   }
+  .avatar-btn:hover { background: var(--accent-hover); }
+  .avatar-btn[aria-expanded="true"] { box-shadow: 0 0 0 3px rgba(202,160,173,0.28); }
 
   .auth-panel {
     width: 100%; margin-top: 12px;
@@ -79,11 +85,18 @@
   .auth-panel .error { margin: 0; font-size: 0.8rem; }
 
   .account-panel {
-    width: 100%; margin-top: 12px;
+    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+    width: 300px; z-index: 30;
     background: var(--bg-soft); border: 1px solid var(--border); border-radius: 18px;
     padding: 16px;
+    box-shadow: 0 24px 55px -20px rgba(0,0,0,0.6);
   }
   .account-panel[hidden] { display: none; }
+  .account-panel .account-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+  }
+  .account-panel .account-greeting { color: var(--text); font-weight: 600; font-size: 0.85rem; }
   .account-panel .history-title {
     font-family: "Playfair Display", serif; font-size: 0.95rem; font-weight: 600;
     color: var(--text); text-align: left; margin: 0 0 12px;
@@ -241,6 +254,10 @@
     </div>
 
     <div class="account-panel" id="account-panel" hidden>
+      <div class="account-header">
+        <span class="account-greeting" id="account-greeting"></span>
+        <button type="button" class="auth-link" id="logout-btn">Esci</button>
+      </div>
       <p class="history-title">La tua cronologia</p>
       <div class="history-grid" id="history-grid"></div>
       <p class="history-empty" id="history-empty" hidden>Genera la tua prima immagine per iniziare la cronologia.</p>
@@ -314,6 +331,8 @@
   const errorEl = document.getElementById("error");
   const metaEl = document.getElementById("meta");
   const accountPanel = document.getElementById("account-panel");
+  const accountGreeting = document.getElementById("account-greeting");
+  const logoutBtn = document.getElementById("logout-btn");
   const historyGrid = document.getElementById("history-grid");
   const historyEmpty = document.getElementById("history-empty");
 
@@ -365,22 +384,36 @@
 
   shareBtn.addEventListener("click", shareCurrentImage);
 
+  function toggleAccountPanel(forceOpen) {
+    const shouldOpen = forceOpen !== undefined ? forceOpen : accountPanel.hidden;
+    accountPanel.hidden = !shouldOpen;
+    const avatarBtn = topbar.querySelector(".avatar-btn");
+    if (avatarBtn) avatarBtn.setAttribute("aria-expanded", String(shouldOpen));
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!accountPanel.hidden && !accountPanel.contains(e.target) && !e.target.closest(".avatar-btn")) {
+      toggleAccountPanel(false);
+    }
+  });
+
   function renderTopbar() {
     topbar.innerHTML = "";
     if (currentUser) {
-      const span = document.createElement("span");
-      span.className = "auth-username";
-      span.textContent = `Ciao, ${currentUser}`;
-      const sep = document.createElement("span");
-      sep.className = "auth-sep";
-      sep.textContent = "-";
-      const logoutBtn = document.createElement("button");
-      logoutBtn.type = "button";
-      logoutBtn.className = "auth-link";
-      logoutBtn.textContent = "Esci";
-      logoutBtn.addEventListener("click", doLogout);
-      topbar.append(span, sep, logoutBtn);
+      accountGreeting.textContent = `Ciao, ${currentUser}`;
+      const avatarBtn = document.createElement("button");
+      avatarBtn.type = "button";
+      avatarBtn.className = "avatar-btn";
+      avatarBtn.textContent = currentUser.charAt(0).toUpperCase();
+      avatarBtn.title = `Ciao, ${currentUser}`;
+      avatarBtn.setAttribute("aria-expanded", "false");
+      avatarBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        toggleAccountPanel();
+      });
+      topbar.appendChild(avatarBtn);
     } else {
+      accountPanel.hidden = true;
       const loginBtn = document.createElement("button");
       loginBtn.type = "button";
       loginBtn.className = "auth-link";
@@ -435,6 +468,8 @@
     }
   });
 
+  logoutBtn.addEventListener("click", doLogout);
+
   async function doLogout() {
     await fetch("/logout", { method: "POST" });
     currentUser = null;
@@ -445,7 +480,6 @@
 
   async function loadHistory() {
     if (!currentUser) return;
-    accountPanel.hidden = false;
     try {
       const res = await fetch("/history");
       const data = await res.json();
