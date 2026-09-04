@@ -48,7 +48,7 @@
     align-items: center;
   }
 
-  .account-area { width: 100%; max-width: 320px; margin: 0 auto 20px; position: relative; }
+  .account-area { width: 100%; max-width: 320px; margin: 0 auto 20px; }
   .topbar {
     width: 100%; display: flex; align-items: center; justify-content: center;
     gap: 8px; min-height: 36px; line-height: 1;
@@ -60,14 +60,11 @@
   .auth-link:hover { color: var(--text); }
   .auth-sep { color: var(--text-faint); font-size: 0.82rem; line-height: 1; }
 
-  .avatar-btn {
-    width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
+  .avatar-badge {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
     background: var(--accent); color: var(--cream); font-family: "Playfair Display", serif;
-    font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s ease, box-shadow 0.15s ease;
+    font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
   }
-  .avatar-btn:hover { background: var(--accent-hover); }
-  .avatar-btn[aria-expanded="true"] { box-shadow: 0 0 0 3px rgba(202,160,173,0.28); }
 
   .auth-panel {
     width: 100%; margin-top: 12px;
@@ -84,41 +81,60 @@
   .auth-panel button.submit { width: 100%; padding: 11px; }
   .auth-panel .error { margin: 0; font-size: 0.8rem; }
 
-  .account-panel {
-    position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%);
-    width: 300px; z-index: 30;
-    background: var(--bg-soft); border: 1px solid var(--border); border-radius: 18px;
-    padding: 16px;
-    box-shadow: 0 24px 55px -20px rgba(0,0,0,0.6);
+  .library-overlay {
+    position: fixed; inset: 0; z-index: 100;
+    background: rgba(10,2,20,0.6);
+    display: flex; justify-content: center;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s ease;
   }
-  .account-panel[hidden] { display: none; }
-  .account-panel .account-header {
+  .library-overlay.open { opacity: 1; pointer-events: auto; }
+  .library-overlay[hidden] { display: none; }
+
+  .library-panel {
+    width: 100%; max-width: 760px; max-height: 82vh; overflow-y: auto;
+    background: var(--bg-soft); border-bottom: 1px solid var(--border);
+    border-radius: 0 0 26px 26px;
+    padding: 26px 28px 32px;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.6);
+  }
+  .library-overlay.open .library-panel { transform: translateY(0); }
+
+  .library-header {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
   }
-  .account-panel .account-greeting { color: var(--text); font-weight: 600; font-size: 0.85rem; }
-  .account-panel .history-title {
-    font-family: "Playfair Display", serif; font-size: 0.95rem; font-weight: 600;
-    color: var(--text); text-align: left; margin: 0 0 12px;
+  .library-title {
+    font-family: "Playfair Display", serif; font-size: 1.5rem; font-weight: 600;
+    color: var(--text); margin: 0;
   }
-  .account-panel .history-empty { color: var(--text-faint); font-size: 0.82rem; margin: 0; }
-  .account-panel .history-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-    max-height: 260px; overflow-y: auto; padding-right: 2px;
+  .library-close {
+    width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border);
+    background: none; color: var(--text-dim); font-size: 1rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: border-color 0.15s ease, color 0.15s ease;
   }
-  .history-grid a {
-    display: block; aspect-ratio: 1/1; border-radius: 10px; overflow: hidden;
+  .library-close:hover { color: var(--text); border-color: var(--accent-rose); }
+
+  .library-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;
+  }
+  .library-grid a {
+    display: block; aspect-ratio: 1/1; border-radius: 12px; overflow: hidden;
     border: 1px solid var(--border); background: var(--bg-elevated);
   }
-  .history-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
-  .history-grid a:hover img { transform: scale(1.06); }
+  .library-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
+  .library-grid a:hover img { transform: scale(1.06); }
+  .library-empty { color: var(--text-faint); font-size: 0.9rem; text-align: center; padding: 30px 0; }
 
   header { text-align: center; margin-bottom: 34px; position: relative; }
   .eyebrow {
     font-size: 0.7rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
     color: var(--accent-rose); margin: 0 0 14px;
   }
-  .brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 14px; position: relative; }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 12px; position: relative; }
   .brand::before {
     content: ""; position: absolute; left: 50%; top: 50%;
     width: 220px; height: 220px; transform: translate(-50%, -50%);
@@ -133,7 +149,6 @@
     letter-spacing: -0.01em;
     color: var(--text);
   }
-  p.hint { color: var(--text-dim); margin: 0 auto; font-size: 0.94rem; line-height: 1.55; text-align: center; max-width: 460px; }
 
   form { width: 100%; max-width: 580px; display: flex; gap: 10px; margin-top: 28px; }
 
@@ -150,7 +165,6 @@
     font-family: inherit;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
-  textarea::placeholder { color: var(--text-faint); }
   textarea:focus { outline: none; border-color: var(--accent-rose); box-shadow: 0 0 0 3px rgba(202,160,173,0.2); }
 
   button.submit {
@@ -168,12 +182,6 @@
   button.submit:hover:not(:disabled) { background: var(--accent-hover); }
   button.submit:active:not(:disabled) { transform: scale(0.97); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-  .kbd-hint { margin-top: 12px; color: var(--text-faint); font-size: 0.74rem; text-align: center; }
-  .kbd-hint kbd {
-    font-family: inherit; background: var(--bg-soft); border: 1px solid var(--border);
-    border-radius: 4px; padding: 1px 6px; font-size: 0.72rem;
-  }
 
   .result-card {
     margin-top: 38px;
@@ -250,16 +258,6 @@
       </form>
       <p class="error" id="auth-error" hidden></p>
     </div>
-
-    <div class="account-panel" id="account-panel" hidden>
-      <div class="account-header">
-        <span class="account-greeting" id="account-greeting"></span>
-        <button type="button" class="auth-link" id="logout-btn">Esci</button>
-      </div>
-      <p class="history-title">La tua cronologia</p>
-      <div class="history-grid" id="history-grid"></div>
-      <p class="history-empty" id="history-empty" hidden>Genera la tua prima immagine per iniziare la cronologia.</p>
-    </div>
   </div>
 
   <header>
@@ -278,14 +276,12 @@
       </svg>
       <span>Aetheria Studio</span>
     </div>
-    <p class="hint">Descrivi l'immagine che vuoi creare, in italiano o inglese — generata da zero tramite Cloudflare Workers AI (Flux).</p>
   </header>
 
   <form id="text-form">
-    <textarea id="prompt" placeholder="es. un gatto arancione seduto su un tetto, stile acquerello" maxlength="200"></textarea>
+    <textarea id="prompt" maxlength="200"></textarea>
     <button type="submit" class="submit" id="text-submit-btn">Genera</button>
   </form>
-  <p class="kbd-hint">Invio per generare · <kbd>Shift</kbd>+<kbd>Invio</kbd> per andare a capo</p>
 
   <div class="result-card">
     <div class="canvas-wrap" id="canvas-wrap">
@@ -308,6 +304,17 @@
   </footer>
 </div>
 
+<div class="library-overlay" id="library-overlay" hidden>
+  <div class="library-panel" id="library-panel">
+    <div class="library-header">
+      <p class="library-title">Libreria</p>
+      <button type="button" class="library-close" id="library-close" aria-label="Chiudi">✕</button>
+    </div>
+    <div class="library-grid" id="library-grid"></div>
+    <p class="library-empty" id="library-empty" hidden>Genera la tua prima immagine per iniziare la libreria.</p>
+  </div>
+</div>
+
 <script>
   const topbar = document.getElementById("topbar");
   const authPanel = document.getElementById("auth-panel");
@@ -326,11 +333,11 @@
   const downloadLink = document.getElementById("download-link");
   const shareBtn = document.getElementById("share-btn");
   const errorEl = document.getElementById("error");
-  const accountPanel = document.getElementById("account-panel");
-  const accountGreeting = document.getElementById("account-greeting");
-  const logoutBtn = document.getElementById("logout-btn");
-  const historyGrid = document.getElementById("history-grid");
-  const historyEmpty = document.getElementById("history-empty");
+
+  const libraryOverlay = document.getElementById("library-overlay");
+  const libraryClose = document.getElementById("library-close");
+  const libraryGrid = document.getElementById("library-grid");
+  const libraryEmpty = document.getElementById("library-empty");
 
   let authMode = "login";
   let currentUser = null;
@@ -380,36 +387,54 @@
 
   shareBtn.addEventListener("click", shareCurrentImage);
 
-  function toggleAccountPanel(forceOpen) {
-    const shouldOpen = forceOpen !== undefined ? forceOpen : accountPanel.hidden;
-    accountPanel.hidden = !shouldOpen;
-    const avatarBtn = topbar.querySelector(".avatar-btn");
-    if (avatarBtn) avatarBtn.setAttribute("aria-expanded", String(shouldOpen));
+  function openLibrary() {
+    libraryOverlay.hidden = false;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => libraryOverlay.classList.add("open"));
+    });
+    loadHistory();
   }
 
-  document.addEventListener("click", (e) => {
-    if (!accountPanel.hidden && !accountPanel.contains(e.target) && !e.target.closest(".avatar-btn")) {
-      toggleAccountPanel(false);
-    }
+  function closeLibrary() {
+    libraryOverlay.classList.remove("open");
+    setTimeout(() => { libraryOverlay.hidden = true; }, 300);
+  }
+
+  libraryClose.addEventListener("click", closeLibrary);
+  libraryOverlay.addEventListener("click", (e) => {
+    if (e.target === libraryOverlay) closeLibrary();
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !libraryOverlay.hidden) closeLibrary();
   });
 
   function renderTopbar() {
     topbar.innerHTML = "";
     if (currentUser) {
-      accountGreeting.textContent = `Ciao, ${currentUser}`;
-      const avatarBtn = document.createElement("button");
-      avatarBtn.type = "button";
-      avatarBtn.className = "avatar-btn";
-      avatarBtn.textContent = currentUser.charAt(0).toUpperCase();
-      avatarBtn.title = `Ciao, ${currentUser}`;
-      avatarBtn.setAttribute("aria-expanded", "false");
-      avatarBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        toggleAccountPanel();
-      });
-      topbar.appendChild(avatarBtn);
+      const avatar = document.createElement("span");
+      avatar.className = "avatar-badge";
+      avatar.textContent = currentUser.charAt(0).toUpperCase();
+      avatar.title = `Ciao, ${currentUser}`;
+
+      const libraryBtn = document.createElement("button");
+      libraryBtn.type = "button";
+      libraryBtn.className = "auth-link";
+      libraryBtn.textContent = "Cronologia";
+      libraryBtn.addEventListener("click", openLibrary);
+
+      const sep = document.createElement("span");
+      sep.className = "auth-sep";
+      sep.textContent = "-";
+
+      const logoutBtn = document.createElement("button");
+      logoutBtn.type = "button";
+      logoutBtn.className = "auth-link";
+      logoutBtn.textContent = "Esci";
+      logoutBtn.addEventListener("click", doLogout);
+
+      topbar.append(avatar, libraryBtn, sep, logoutBtn);
     } else {
-      accountPanel.hidden = true;
+      closeLibrary();
       const loginBtn = document.createElement("button");
       loginBtn.type = "button";
       loginBtn.className = "auth-link";
@@ -455,7 +480,6 @@
       currentUser = data.username;
       authPanel.hidden = true;
       renderTopbar();
-      loadHistory();
     } catch (err) {
       authError.textContent = err.message;
       authError.hidden = false;
@@ -464,14 +488,11 @@
     }
   });
 
-  logoutBtn.addEventListener("click", doLogout);
-
   async function doLogout() {
     await fetch("/logout", { method: "POST" });
     currentUser = null;
     renderTopbar();
-    accountPanel.hidden = true;
-    historyGrid.innerHTML = "";
+    libraryGrid.innerHTML = "";
   }
 
   async function loadHistory() {
@@ -479,10 +500,10 @@
     try {
       const res = await fetch("/history");
       const data = await res.json();
-      historyGrid.innerHTML = "";
+      libraryGrid.innerHTML = "";
       const images = data.images || [];
-      historyEmpty.hidden = images.length > 0;
-      historyGrid.hidden = images.length === 0;
+      libraryEmpty.hidden = images.length > 0;
+      libraryGrid.hidden = images.length === 0;
       images.forEach((img) => {
         const a = document.createElement("a");
         a.href = img.image_url;
@@ -494,11 +515,11 @@
         image.alt = img.prompt;
         image.loading = "lazy";
         a.appendChild(image);
-        historyGrid.appendChild(a);
+        libraryGrid.appendChild(a);
       });
     } catch {
-      historyEmpty.hidden = false;
-      historyGrid.hidden = true;
+      libraryEmpty.hidden = false;
+      libraryGrid.hidden = true;
     }
   }
 
@@ -506,10 +527,7 @@
     try {
       const res = await fetch("/me");
       const data = await res.json();
-      if (data.username) {
-        currentUser = data.username;
-        loadHistory();
-      }
+      if (data.username) currentUser = data.username;
     } catch {}
     renderTopbar();
   }
@@ -560,7 +578,6 @@
       lastPrompt = prompt;
       resultFooter.hidden = false;
       textSubmitBtn.disabled = false;
-      if (currentUser) loadHistory();
     };
     img.onerror = () => {
       showError("Impossibile caricare l'immagine generata.");
