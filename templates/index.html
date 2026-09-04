@@ -121,12 +121,13 @@
   .library-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px;
   }
-  .library-grid a {
+  .library-item {
     display: block; aspect-ratio: 1/1; border-radius: 12px; overflow: hidden;
     border: 1px solid var(--border); background: var(--bg-elevated);
+    padding: 0; cursor: pointer;
   }
   .library-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
-  .library-grid a:hover img { transform: scale(1.06); }
+  .library-item:hover img { transform: scale(1.06); }
   .library-empty { color: var(--text-faint); font-size: 0.9rem; text-align: center; padding: 30px 0; }
 
   header { text-align: center; margin-bottom: 34px; position: relative; }
@@ -166,6 +167,7 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   textarea:focus { outline: none; border-color: var(--accent-rose); box-shadow: 0 0 0 3px rgba(202,160,173,0.2); }
+  textarea::placeholder { color: var(--text-faint); opacity: 0.7; }
 
   button.submit {
     padding: 0 28px;
@@ -233,6 +235,37 @@
   }
   .result-footer a:hover, .result-actions button:hover { border-color: var(--accent); background: rgba(107,63,120,0.08); }
 
+  .lightbox-overlay {
+    position: fixed; inset: 0; z-index: 110;
+    background: rgba(10,2,20,0.75);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .lightbox-overlay.open { opacity: 1; pointer-events: auto; }
+  .lightbox-overlay[hidden] { display: none; }
+  .lightbox-content {
+    position: relative;
+    width: 100%; max-width: 560px;
+    background: var(--cream);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.6);
+    transform: scale(0.96);
+    transition: transform 0.2s ease;
+  }
+  .lightbox-overlay.open .lightbox-content { transform: scale(1); }
+  .lightbox-content img {
+    width: 100%; max-height: 70vh; object-fit: contain; display: block; background: var(--cream-2);
+  }
+  .lightbox-content .result-footer { border-top: 1px solid rgba(56,42,55,0.12); }
+  .lightbox-content .library-close {
+    position: absolute; top: 12px; right: 12px; z-index: 5;
+    background: rgba(244,236,223,0.9); border-color: transparent; color: var(--ink);
+  }
+  .lightbox-content .library-close:hover { background: var(--cream); border-color: var(--accent); }
+
   .error { color: var(--danger); margin-top: 16px; font-size: 0.88rem; text-align: center; max-width: 500px; }
 
   footer { margin-top: 60px; color: var(--text-faint); font-size: 0.76rem; text-align: center; line-height: 1.8; }
@@ -279,7 +312,7 @@
   </header>
 
   <form id="text-form">
-    <textarea id="prompt" maxlength="200"></textarea>
+    <textarea id="prompt" maxlength="200" placeholder="digita"></textarea>
     <button type="submit" class="submit" id="text-submit-btn">Genera</button>
   </form>
 
@@ -315,6 +348,20 @@
   </div>
 </div>
 
+<div class="lightbox-overlay" id="lightbox-overlay" hidden>
+  <div class="lightbox-content">
+    <button type="button" class="library-close" id="lightbox-close" aria-label="Chiudi">✕</button>
+    <img id="lightbox-img" alt="" />
+    <div class="result-footer">
+      <div class="result-actions">
+        <a id="lightbox-download" href="#" download>Scarica ⬇</a>
+        <button type="button" id="lightbox-share">Condividi ↗</button>
+        <a id="lightbox-open" href="#" target="_blank" rel="noopener">Schermo intero ↗</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   const topbar = document.getElementById("topbar");
   const authPanel = document.getElementById("auth-panel");
@@ -339,6 +386,13 @@
   const libraryGrid = document.getElementById("library-grid");
   const libraryEmpty = document.getElementById("library-empty");
 
+  const lightboxOverlay = document.getElementById("lightbox-overlay");
+  const lightboxClose = document.getElementById("lightbox-close");
+  const lightboxImg = document.getElementById("lightbox-img");
+  const lightboxDownload = document.getElementById("lightbox-download");
+  const lightboxShare = document.getElementById("lightbox-share");
+  const lightboxOpen = document.getElementById("lightbox-open");
+
   let authMode = "login";
   let currentUser = null;
   let lastImageUrl = null;
@@ -350,27 +404,27 @@
     );
   }
 
-  async function shareCurrentImage() {
-    if (!lastImageUrl) return;
-    const absoluteUrl = new URL(lastImageUrl, window.location.origin).href;
-    const originalLabel = shareBtn.textContent;
+  async function shareImage(url, prompt, buttonEl) {
+    if (!url) return;
+    const absoluteUrl = new URL(url, window.location.origin).href;
+    const originalLabel = buttonEl.textContent;
 
     const flash = (label) => {
-      shareBtn.textContent = label;
-      setTimeout(() => { shareBtn.textContent = originalLabel; }, 1800);
+      buttonEl.textContent = label;
+      setTimeout(() => { buttonEl.textContent = originalLabel; }, 1800);
     };
 
     try {
-      const resp = await fetch(lastImageUrl);
+      const resp = await fetch(url);
       const blob = await resp.blob();
       const file = new File([blob], "aetheria-studio.png", { type: blob.type || "image/png" });
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Aetheria Studio", text: lastPrompt });
+        await navigator.share({ files: [file], title: "Aetheria Studio", text: prompt });
         return;
       }
       if (navigator.share) {
-        await navigator.share({ url: absoluteUrl, title: "Aetheria Studio", text: lastPrompt });
+        await navigator.share({ url: absoluteUrl, title: "Aetheria Studio", text: prompt });
         return;
       }
       throw new Error("share-unsupported");
@@ -385,7 +439,33 @@
     }
   }
 
-  shareBtn.addEventListener("click", shareCurrentImage);
+  shareBtn.addEventListener("click", () => shareImage(lastImageUrl, lastPrompt, shareBtn));
+
+  function openLightbox(url, prompt) {
+    lightboxImg.src = url;
+    lightboxImg.alt = prompt || "";
+    lightboxDownload.href = url;
+    lightboxDownload.download = `aetheria-${slugify(prompt || "immagine")}.png`;
+    lightboxOpen.href = url;
+    lightboxOverlay.hidden = false;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => lightboxOverlay.classList.add("open"));
+    });
+  }
+
+  function closeLightbox() {
+    lightboxOverlay.classList.remove("open");
+    setTimeout(() => { lightboxOverlay.hidden = true; }, 200);
+  }
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightboxOverlay.addEventListener("click", (e) => {
+    if (e.target === lightboxOverlay) closeLightbox();
+  });
+  lightboxShare.addEventListener("click", () => shareImage(lightboxImg.src, lightboxImg.alt, lightboxShare));
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !lightboxOverlay.hidden) closeLightbox();
+  });
 
   function openLibrary() {
     libraryOverlay.hidden = false;
@@ -505,17 +585,17 @@
       libraryEmpty.hidden = images.length > 0;
       libraryGrid.hidden = images.length === 0;
       images.forEach((img) => {
-        const a = document.createElement("a");
-        a.href = img.image_url;
-        a.target = "_blank";
-        a.rel = "noopener";
-        a.title = img.prompt;
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "library-item";
+        item.title = img.prompt;
         const image = document.createElement("img");
         image.src = img.image_url;
         image.alt = img.prompt;
         image.loading = "lazy";
-        a.appendChild(image);
-        libraryGrid.appendChild(a);
+        item.appendChild(image);
+        item.addEventListener("click", () => openLightbox(img.image_url, img.prompt));
+        libraryGrid.appendChild(item);
       });
     } catch {
       libraryEmpty.hidden = false;

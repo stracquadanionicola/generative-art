@@ -35,7 +35,14 @@ db.init_db()
 
 WIDTH, HEIGHT = 1200, 1200
 CF_TEXT_TO_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell"
-CF_TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b"
+CF_TRANSLATE_MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8"
+TRANSLATE_SYSTEM_PROMPT = (
+    "You translate Italian image-generation prompts into vivid, literal English "
+    "suitable for an AI image generator. Translate the MEANING and IMAGERY, not "
+    "word-for-word. If the source uses an idiom or figure of speech, describe what "
+    "it would actually look like visually instead of translating it literally. "
+    "Reply with ONLY the English translation, nothing else."
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
@@ -96,11 +103,18 @@ def cf_run(model, **request_kwargs):
 
 
 def translate_to_english(text):
-    """Best-effort IT->EN translation; falls back to the original text on any failure."""
-    payload, err = cf_run(CF_TRANSLATE_MODEL, json={"text": text, "source_lang": "it", "target_lang": "en"})
+    """Best-effort IT->EN translation via an instruction-following LLM, which handles
+    idioms and long/complex sentences far better than a dedicated MT model. Falls back
+    to the original text on any failure."""
+    payload, err = cf_run(CF_TRANSLATE_MODEL, json={
+        "messages": [
+            {"role": "system", "content": TRANSLATE_SYSTEM_PROMPT},
+            {"role": "user", "content": text},
+        ],
+    })
     if err:
         return text
-    return payload["result"]["translated_text"]
+    return payload["result"]["response"].strip()
 
 
 def seed_from(text):
