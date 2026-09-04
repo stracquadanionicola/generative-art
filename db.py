@@ -1,19 +1,30 @@
 import os
-import sqlite3
 from datetime import datetime, timezone
 
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "app.db")
+import requests
 
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def _query(sql, params=None):
+    account_id = os.environ.get("CF_ACCOUNT_ID")
+    api_token = os.environ.get("CF_API_TOKEN")
+    database_id = os.environ.get("CF_D1_DATABASE_ID")
+
+    url = f"https://api.cloudflare.com/client/v4/accounts/{account_id}/d1/database/{database_id}/query"
+    resp = requests.post(
+        url,
+        headers={"Authorization": f"Bearer {api_token}"},
+        json={"sql": sql, "params": params or []},
+        timeout=20,
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+    if not payload.get("success"):
+        raise RuntimeError(f"D1 query failed: {payload.get('errors')}")
+    return payload["result"][0]
 
 
 def init_db():
-    conn = get_db()
-    conn.execute("""
+    _query("""
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
@@ -21,64 +32,47 @@ def init_db():
             created_at TEXT NOT NULL
         )
     """)
-    conn.execute("""
+    _query("""
         CREATE TABLE IF NOT EXISTS images (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             prompt TEXT NOT NULL,
             seed INTEGER,
             filename TEXT NOT NULL,
-            created_at TEXT NOT NULL,
-            FOREIGN KEY(user_id) REFERENCES users(id)
+            created_at TEXT NOT NULL
         )
     """)
-    conn.commit()
-    conn.close()
 
 
 def create_user(username, password_hash):
-    conn = get_db()
     now = datetime.now(timezone.utc).isoformat()
-    cur = conn.execute(
+    result = _query(
         "INSERT INTO users (username, password_hash, created_at) VALUES (?, ?, ?)",
-        (username, password_hash, now),
+        [username, password_hash, now],
     )
-    conn.commit()
-    user_id = cur.lastrowid
-    conn.close()
-    return user_id
+    return result["meta"]["last_row_id"]
 
 
 def get_user_by_username(username):
-    conn = get_db()
-    row = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-    conn.close()
-    return row
+    rows = _query("SELECT * FROM users WHERE username = ?", [username])["results"]
+    return rows[0] if rows else None
 
 
 def get_user_by_id(user_id):
-    conn = get_db()
-    row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    conn.close()
-    return row
+    rows = _query("SELECT * FROM users WHERE id = ?", [user_id])["results"]
+    return rows[0] if rows else None
 
 
 def save_image(user_id, prompt, seed, filename):
-    conn = get_db()
     now = datetime.now(timezone.utc).isoformat()
-    conn.execute(
+    _query(
         "INSERT INTO images (user_id, prompt, seed, filename, created_at) VALUES (?, ?, ?, ?, ?)",
-        (user_id, prompt, seed, filename, now),
+        [user_id, prompt, seed, filename, now],
     )
-    conn.commit()
-    conn.close()
 
 
 def get_user_images(user_id, limit=24):
-    conn = get_db()
-    rows = conn.execute(
+    return _query(
         "SELECT * FROM images WHERE user_id = ? ORDER BY id DESC LIMIT ?",
-        (user_id, limit),
-    ).fetchall()
-    conn.close()
-    return rows
+        [user_id, limit],
+    )["results"]
