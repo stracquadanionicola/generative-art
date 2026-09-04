@@ -2,10 +2,17 @@
 import base64
 import hashlib
 import os
+import secrets
 import time
 
 import requests
 from flask import Flask, jsonify, render_template, request, send_from_directory
+from flask_login import (
+    LoginManager, UserMixin, current_user, login_required, login_user, logout_user,
+)
+from werkzeug.security import check_password_hash, generate_password_hash
+
+import db
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
@@ -25,14 +32,29 @@ def load_dotenv(path):
 
 
 load_dotenv(os.path.join(BASE_DIR, ".env"))
+db.init_db()
 
 WIDTH, HEIGHT = 1200, 1200
 CF_TEXT_TO_IMAGE_MODEL = "@cf/black-forest-labs/flux-1-schnell"
-CF_DESCRIBE_MODEL = "@cf/llava-hf/llava-1.5-7b-hf"
-CF_DETECT_MODEL = "@cf/facebook/detr-resnet-50"
+CF_TRANSLATE_MODEL = "@cf/meta/m2m100-1.2b"
 
 app = Flask(__name__)
-app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024  # 8MB upload limit
+app.secret_key = os.environ.get("SECRET_KEY") or secrets.token_hex(32)
+
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+class User(UserMixin):
+    def __init__(self, row):
+        self.id = str(row["id"])
+        self.username = row["username"]
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    row = db.get_user_by_id(int(user_id))
+    return User(row) if row else None
 
 
 def cf_credentials():
@@ -69,6 +91,14 @@ def cf_run(model, **request_kwargs):
     return payload, None
 
 
+def translate_to_english(text):
+    """Best-effort IT->EN translation; falls back to the original text on any failure."""
+    payload, err = cf_run(CF_TRANSLATE_MODEL, json={"text": text, "source_lang": "it", "target_lang": "en"})
+    if err:
+        return text
+    return payload["result"]["translated_text"]
+
+
 def seed_from(text):
     return int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16) % (10**6)
 
@@ -78,6 +108,69 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json(force=True) or {}
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+
+    if len(username) < 3:
+        return jsonify({"error": "Lo username deve avere almeno 3 caratteri."}), 400
+    if len(password) < 6:
+        return jsonify({"error": "La password deve avere almeno 6 caratteri."}), 400
+    if db.get_user_by_username(username):
+        return jsonify({"error": "Username già in uso."}), 400
+
+    user_id = db.create_user(username, generate_password_hash(password, method="pbkdf2:sha256"))
+    login_user(User(db.get_user_by_id(user_id)))
+    return jsonify({"username": username})
+
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json(force=True) or {}
+    username = (data.get("username") or "").strip()
+    password = data.get("password") or ""
+
+    row = db.get_user_by_username(username)
+    if not row or not check_password_hash(row["password_hash"], password):
+        return jsonify({"error": "Username o password non corretti."}), 401
+
+    login_user(User(row))
+    return jsonify({"username": row["username"]})
+
+
+@app.route("/logout", methods=["POST"])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({"ok": True})
+
+
+@app.route("/me")
+def me():
+    if current_user.is_authenticated:
+        return jsonify({"username": current_user.username})
+    return jsonify({"username": None})
+
+
+@app.route("/history")
+@login_required
+def history():
+    rows = db.get_user_images(int(current_user.id))
+    return jsonify({
+        "images": [
+            {
+                "prompt": r["prompt"],
+                "seed": r["seed"],
+                "image_url": f"/output/{r['filename']}",
+                "created_at": r["created_at"],
+            }
+            for r in rows
+        ]
+    })
+
+
 @app.route("/cf/text-to-image", methods=["POST"])
 def cf_text_to_image():
     data = request.get_json(force=True) or {}
@@ -85,7 +178,9 @@ def cf_text_to_image():
     if not prompt:
         return jsonify({"error": "Il prompt non può essere vuoto."}), 400
 
-    payload, err = cf_run(CF_TEXT_TO_IMAGE_MODEL, json={"prompt": prompt})
+    english_prompt = translate_to_english(prompt)
+
+    payload, err = cf_run(CF_TEXT_TO_IMAGE_MODEL, json={"prompt": english_prompt})
     if err:
         return err
 
@@ -95,36 +190,17 @@ def cf_text_to_image():
     with open(os.path.join(OUTPUT_DIR, filename), "wb") as f:
         f.write(image_bytes)
 
+    if current_user.is_authenticated:
+        db.save_image(int(current_user.id), prompt, seed, filename)
+
     return jsonify({
         "image_url": f"/output/{filename}",
-        "params": {"seed": seed, "source": f"cloudflare-workers-ai ({CF_TEXT_TO_IMAGE_MODEL})"},
+        "params": {
+            "seed": seed,
+            "source": f"cloudflare-workers-ai ({CF_TEXT_TO_IMAGE_MODEL})",
+            "translated_prompt": english_prompt if english_prompt.strip().lower() != prompt.strip().lower() else None,
+        },
     })
-
-
-@app.route("/cf/describe", methods=["POST"])
-def cf_describe():
-    file = request.files.get("image")
-    if not file:
-        return jsonify({"error": "Nessuna immagine caricata."}), 400
-
-    payload, err = cf_run(CF_DESCRIBE_MODEL, data=file.read(), headers={"Content-Type": "application/octet-stream"})
-    if err:
-        return err
-
-    return jsonify({"description": payload["result"]["description"].strip()})
-
-
-@app.route("/cf/detect", methods=["POST"])
-def cf_detect():
-    file = request.files.get("image")
-    if not file:
-        return jsonify({"error": "Nessuna immagine caricata."}), 400
-
-    payload, err = cf_run(CF_DETECT_MODEL, data=file.read(), headers={"Content-Type": "application/octet-stream"})
-    if err:
-        return err
-
-    return jsonify({"objects": payload["result"]})
 
 
 @app.route("/output/<path:filename>")

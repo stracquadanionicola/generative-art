@@ -3,3 +3,4 @@
 __pycache__/
 output/*.png
 .DS_Store
+app.db

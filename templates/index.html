@@ -42,11 +42,35 @@
   .page {
     max-width: 760px;
     margin: 0 auto;
-    padding: 60px 20px 64px;
+    padding: 24px 20px 64px;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
+
+  .topbar { width: 100%; display: flex; justify-content: flex-end; margin-bottom: 12px; min-height: 30px; }
+  .auth-link {
+    background: none; border: none; color: var(--text-dim); font-family: inherit;
+    font-size: 0.82rem; cursor: pointer; padding: 4px 2px;
+  }
+  .auth-link:hover { color: var(--text); }
+  .auth-sep { color: var(--text-faint); margin: 0 8px; font-size: 0.82rem; }
+  .auth-username { color: var(--text); font-weight: 600; font-size: 0.82rem; }
+
+  .auth-panel {
+    width: 100%; max-width: 320px; margin-bottom: 20px;
+    background: var(--bg-soft); border: 1px solid var(--border); border-radius: 18px;
+    padding: 18px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .auth-panel[hidden] { display: none; }
+  .auth-panel form { flex-direction: column; margin-top: 0; max-width: none; }
+  .auth-panel input {
+    padding: 11px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--bg-elevated); color: var(--text); font-size: 0.88rem; font-family: inherit;
+  }
+  .auth-panel input:focus { outline: none; border-color: var(--accent-rose); }
+  .auth-panel button.submit { width: 100%; padding: 11px; }
+  .auth-panel .error { margin: 0; font-size: 0.8rem; }
 
   header { text-align: center; margin-bottom: 34px; position: relative; }
   .eyebrow {
@@ -68,24 +92,9 @@
     letter-spacing: -0.01em;
     color: var(--text);
   }
-  p.hint { color: var(--text-dim); margin: 0 auto; font-size: 0.94rem; line-height: 1.55; text-align: center; max-width: 460px; min-height: 2.9em; }
+  p.hint { color: var(--text-dim); margin: 0 auto; font-size: 0.94rem; line-height: 1.55; text-align: center; max-width: 460px; }
 
-  .mode-toggle {
-    display: flex; gap: 4px; margin: 28px 0 24px;
-    background: var(--bg-soft); padding: 5px; border-radius: 999px; border: 1px solid var(--border);
-  }
-  .mode-btn {
-    display: flex; align-items: center; gap: 6px;
-    padding: 10px 18px; border-radius: 999px; border: none; background: transparent;
-    color: var(--text-dim); font-size: 0.85rem; font-weight: 500; font-family: inherit; cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
-    white-space: nowrap;
-  }
-  .mode-btn:hover:not(.active) { color: var(--text); background: rgba(244,232,216,0.06); }
-  .mode-btn.active { background: var(--accent); color: var(--cream); font-weight: 600; }
-
-  form { width: 100%; max-width: 580px; display: flex; gap: 10px; }
-  form[hidden] { display: none; }
+  form { width: 100%; max-width: 580px; display: flex; gap: 10px; margin-top: 28px; }
 
   textarea {
     flex: 1;
@@ -125,23 +134,6 @@
     border-radius: 4px; padding: 1px 6px; font-size: 0.72rem;
   }
 
-  .dropzone {
-    flex: 1;
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 18px;
-    border-radius: 999px;
-    border: 1px dashed var(--border);
-    background: var(--bg-soft);
-    color: var(--text-faint);
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease;
-  }
-  .dropzone:hover, .dropzone.drag { border-color: var(--accent-rose); color: var(--text-dim); }
-  .dropzone.has-file { color: var(--text); border-style: solid; }
-  .dropzone img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
-  .dropzone input { display: none; }
-
   .result-card {
     margin-top: 38px;
     width: 100%;
@@ -161,7 +153,7 @@
     position: relative;
     background: var(--cream-2);
   }
-  .canvas-wrap img, .canvas-wrap canvas {
+  .canvas-wrap img {
     max-width: 100%; max-height: 100%; width: auto; height: auto;
     display: block; animation: reveal 0.4s ease;
   }
@@ -178,12 +170,6 @@
   .spinner-label { color: var(--ink-dim); font-size: 0.8rem; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .result-text {
-    padding: 18px 22px; border-top: 1px solid rgba(56,42,55,0.12);
-    color: var(--ink); font-size: 0.94rem; line-height: 1.6;
-  }
-  .result-text[hidden] { display: none; }
-
   .result-footer {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 14px 22px; border-top: 1px solid rgba(56,42,55,0.12);
@@ -199,19 +185,45 @@
 
   .error { color: var(--danger); margin-top: 16px; font-size: 0.88rem; text-align: center; max-width: 500px; }
 
-  footer { margin-top: 60px; color: var(--text-faint); font-size: 0.76rem; text-align: center; }
+  .history-section { width: 100%; max-width: 640px; margin-top: 48px; }
+  .history-section[hidden] { display: none; }
+  .history-title {
+    font-family: "Playfair Display", serif; font-size: 1.1rem; font-weight: 600;
+    color: var(--text); text-align: center; margin: 0 0 18px;
+  }
+  .history-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px;
+  }
+  .history-grid a {
+    display: block; aspect-ratio: 1/1; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border); background: var(--bg-soft);
+  }
+  .history-grid img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s ease; }
+  .history-grid a:hover img { transform: scale(1.06); }
+
+  footer { margin-top: 60px; color: var(--text-faint); font-size: 0.76rem; text-align: center; line-height: 1.8; }
   footer a { color: var(--text-dim); text-decoration: none; border-bottom: 1px solid var(--border); }
   footer a:hover { color: var(--text); border-color: var(--accent-rose); }
 
   @media (max-width: 520px) {
     form { flex-direction: column; }
     button.submit { padding: 13px; }
-    .mode-toggle { flex-wrap: wrap; justify-content: center; border-radius: 18px; }
   }
 </style>
 </head>
 <body>
 <div class="page">
+  <div class="topbar" id="topbar"></div>
+
+  <div class="auth-panel" id="auth-panel" hidden>
+    <form id="auth-form">
+      <input type="text" id="auth-username-input" placeholder="Username" autocomplete="username" />
+      <input type="password" id="auth-password-input" placeholder="Password" autocomplete="current-password" />
+      <button type="submit" class="submit" id="auth-submit-btn">Accedi</button>
+    </form>
+    <p class="error" id="auth-error" hidden></p>
+  </div>
+
   <header>
     <p class="eyebrow">AI Image Studio</p>
     <div class="brand">
@@ -228,35 +240,19 @@
       </svg>
       <span>Aetheria Studio</span>
     </div>
-    <p class="hint" id="hint"></p>
+    <p class="hint">Descrivi l'immagine che vuoi creare, in italiano o inglese — generata da zero tramite Cloudflare Workers AI (Flux).</p>
   </header>
 
-  <div class="mode-toggle" id="mode-toggle">
-    <button type="button" class="mode-btn active" data-mode="generate">✨ Testo → Immagine</button>
-    <button type="button" class="mode-btn" data-mode="describe">📝 Descrivi immagine</button>
-    <button type="button" class="mode-btn" data-mode="detect">🔎 Rileva oggetti</button>
-  </div>
-
   <form id="text-form">
-    <textarea id="prompt" placeholder="" maxlength="200"></textarea>
+    <textarea id="prompt" placeholder="es. un gatto arancione seduto su un tetto, stile acquerello" maxlength="200"></textarea>
     <button type="submit" class="submit" id="text-submit-btn">Genera</button>
   </form>
-
-  <form id="upload-form" hidden>
-    <label class="dropzone" id="dropzone" for="file-input">
-      <span id="dropzone-label">Scegli o trascina un'immagine</span>
-      <input type="file" id="file-input" accept="image/*" />
-    </label>
-    <button type="submit" class="submit" id="upload-submit-btn" disabled>Analizza</button>
-  </form>
-
-  <p class="kbd-hint" id="kbd-hint">Invio per generare · <kbd>Shift</kbd>+<kbd>Invio</kbd> per andare a capo</p>
+  <p class="kbd-hint">Invio per generare · <kbd>Shift</kbd>+<kbd>Invio</kbd> per andare a capo</p>
 
   <div class="result-card">
     <div class="canvas-wrap" id="canvas-wrap">
       <div class="placeholder" id="placeholder">Il risultato apparirà qui</div>
     </div>
-    <p class="result-text" id="result-text" hidden></p>
     <div class="result-footer" id="result-footer" hidden>
       <span class="meta" id="meta"></span>
       <a id="open-link" href="#" target="_blank" rel="noopener">Apri a schermo intero ↗</a>
@@ -264,101 +260,167 @@
   </div>
   <div class="error" id="error" hidden></div>
 
+  <section class="history-section" id="history-section" hidden>
+    <p class="history-title">La tua cronologia</p>
+    <div class="history-grid" id="history-grid"></div>
+  </section>
+
   <footer>
+    Creato da Stracquadanio Nicola<br />
     <a href="https://github.com/stracquadanionicola/generative-art" target="_blank" rel="noopener">codice sorgente</a>
     · powered by Cloudflare Workers AI
   </footer>
 </div>
 
 <script>
+  const topbar = document.getElementById("topbar");
+  const authPanel = document.getElementById("auth-panel");
+  const authForm = document.getElementById("auth-form");
+  const authUsernameInput = document.getElementById("auth-username-input");
+  const authPasswordInput = document.getElementById("auth-password-input");
+  const authSubmitBtn = document.getElementById("auth-submit-btn");
+  const authError = document.getElementById("auth-error");
+
   const textForm = document.getElementById("text-form");
-  const uploadForm = document.getElementById("upload-form");
   const promptEl = document.getElementById("prompt");
   const textSubmitBtn = document.getElementById("text-submit-btn");
-  const uploadSubmitBtn = document.getElementById("upload-submit-btn");
-  const dropzone = document.getElementById("dropzone");
-  const dropzoneLabel = document.getElementById("dropzone-label");
-  const fileInput = document.getElementById("file-input");
-  const kbdHint = document.getElementById("kbd-hint");
   const canvasWrap = document.getElementById("canvas-wrap");
-  const resultText = document.getElementById("result-text");
   const resultFooter = document.getElementById("result-footer");
   const openLink = document.getElementById("open-link");
   const errorEl = document.getElementById("error");
   const metaEl = document.getElementById("meta");
-  const hintEl = document.getElementById("hint");
-  const modeBtns = document.querySelectorAll(".mode-btn");
+  const historySection = document.getElementById("history-section");
+  const historyGrid = document.getElementById("history-grid");
 
-  const MODES = {
-    generate: {
-      kind: "text",
-      endpoint: "/cf/text-to-image",
-      hint: "Descrivi l'immagine che vuoi creare — generata da zero tramite Cloudflare Workers AI (Flux).",
-      placeholder: "es. un gatto arancione seduto su un tetto, stile acquerello",
-      spinnerLabel: "Generazione in corso (può richiedere qualche secondo)…",
-    },
-    describe: {
-      kind: "upload",
-      endpoint: "/cf/describe",
-      hint: "Carica un'immagine: un modello visione (LLaVA) la osserva e ne scrive una descrizione.",
-      spinnerLabel: "Analisi dell'immagine in corso…",
-    },
-    detect: {
-      kind: "upload",
-      endpoint: "/cf/detect",
-      hint: "Carica un'immagine: viene rilevato ogni oggetto riconoscibile, con etichetta e riquadro.",
-      spinnerLabel: "Rilevamento oggetti in corso…",
-    },
-  };
+  let authMode = "login";
+  let currentUser = null;
 
-  let mode = "generate";
-  let selectedFile = null;
-
-  function applyMode(newMode) {
-    mode = newMode;
-    modeBtns.forEach((b) => b.classList.toggle("active", b.dataset.mode === mode));
-    const cfg = MODES[mode];
-    hintEl.textContent = cfg.hint;
-
-    const isText = cfg.kind === "text";
-    textForm.hidden = !isText;
-    uploadForm.hidden = isText;
-    kbdHint.hidden = !isText;
-    if (isText) promptEl.placeholder = cfg.placeholder;
+  function renderTopbar() {
+    topbar.innerHTML = "";
+    if (currentUser) {
+      const span = document.createElement("span");
+      span.className = "auth-username";
+      span.textContent = `Ciao, ${currentUser}`;
+      const sep = document.createElement("span");
+      sep.className = "auth-sep";
+      sep.textContent = "·";
+      const logoutBtn = document.createElement("button");
+      logoutBtn.type = "button";
+      logoutBtn.className = "auth-link";
+      logoutBtn.textContent = "Esci";
+      logoutBtn.addEventListener("click", doLogout);
+      topbar.append(span, sep, logoutBtn);
+    } else {
+      const loginBtn = document.createElement("button");
+      loginBtn.type = "button";
+      loginBtn.className = "auth-link";
+      loginBtn.textContent = "Accedi";
+      loginBtn.addEventListener("click", () => openAuthPanel("login"));
+      const sep = document.createElement("span");
+      sep.className = "auth-sep";
+      sep.textContent = "·";
+      const registerBtn = document.createElement("button");
+      registerBtn.type = "button";
+      registerBtn.className = "auth-link";
+      registerBtn.textContent = "Registrati";
+      registerBtn.addEventListener("click", () => openAuthPanel("register"));
+      topbar.append(loginBtn, sep, registerBtn);
+    }
   }
 
-  modeBtns.forEach((b) => b.addEventListener("click", () => applyMode(b.dataset.mode)));
-  applyMode("generate");
+  function openAuthPanel(newMode) {
+    authMode = newMode;
+    authError.hidden = true;
+    authForm.reset();
+    authSubmitBtn.textContent = authMode === "login" ? "Accedi" : "Crea account";
+    authPasswordInput.autocomplete = authMode === "login" ? "current-password" : "new-password";
+    authPanel.hidden = false;
+    authUsernameInput.focus();
+  }
 
-  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag"); });
-  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
-  dropzone.addEventListener("drop", (e) => {
+  authForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    dropzone.classList.remove("drag");
-    if (e.dataTransfer.files[0]) setFile(e.dataTransfer.files[0]);
-  });
-  fileInput.addEventListener("change", () => {
-    if (fileInput.files[0]) setFile(fileInput.files[0]);
+    authError.hidden = true;
+    authSubmitBtn.disabled = true;
+    const username = authUsernameInput.value.trim();
+    const password = authPasswordInput.value;
+
+    try {
+      const res = await fetch(authMode === "login" ? "/login" : "/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
+      currentUser = data.username;
+      authPanel.hidden = true;
+      renderTopbar();
+      loadHistory();
+    } catch (err) {
+      authError.textContent = err.message;
+      authError.hidden = false;
+    } finally {
+      authSubmitBtn.disabled = false;
+    }
   });
 
-  function setFile(file) {
-    selectedFile = file;
-    uploadSubmitBtn.disabled = false;
-    dropzone.classList.add("has-file");
-    const url = URL.createObjectURL(file);
-    dropzoneLabel.textContent = file.name;
-    const thumb = document.createElement("img");
-    thumb.src = url;
-    dropzone.querySelector("img")?.remove();
-    dropzone.prepend(thumb);
+  async function doLogout() {
+    await fetch("/logout", { method: "POST" });
+    currentUser = null;
+    renderTopbar();
+    historySection.hidden = true;
+    historyGrid.innerHTML = "";
   }
 
-  function resetResultArea(spinnerLabel) {
+  async function loadHistory() {
+    if (!currentUser) return;
+    try {
+      const res = await fetch("/history");
+      const data = await res.json();
+      historyGrid.innerHTML = "";
+      if (!data.images || !data.images.length) {
+        historySection.hidden = true;
+        return;
+      }
+      data.images.forEach((img) => {
+        const a = document.createElement("a");
+        a.href = img.image_url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.title = img.prompt;
+        const image = document.createElement("img");
+        image.src = img.image_url;
+        image.alt = img.prompt;
+        image.loading = "lazy";
+        a.appendChild(image);
+        historyGrid.appendChild(a);
+      });
+      historySection.hidden = false;
+    } catch {
+      historySection.hidden = true;
+    }
+  }
+
+  async function init() {
+    renderTopbar();
+    try {
+      const res = await fetch("/me");
+      const data = await res.json();
+      if (data.username) {
+        currentUser = data.username;
+        renderTopbar();
+        loadHistory();
+      }
+    } catch {}
+  }
+  init();
+
+  function resetResultArea() {
     errorEl.hidden = true;
     resultFooter.hidden = true;
-    resultText.hidden = true;
     canvasWrap.style.aspectRatio = "1 / 1";
-    canvasWrap.innerHTML = `<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">${spinnerLabel}</div></div>`;
+    canvasWrap.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div><div class="spinner-label">Generazione in corso (può richiedere qualche secondo)…</div></div>';
   }
 
   function showError(message) {
@@ -367,21 +429,13 @@
     errorEl.hidden = false;
   }
 
-  function loadLocalImage(file) {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.src = URL.createObjectURL(file);
-    });
-  }
-
   async function generateFromText(prompt) {
-    resetResultArea(MODES.generate.spinnerLabel);
+    resetResultArea();
     textSubmitBtn.disabled = true;
 
     let data;
     try {
-      const res = await fetch(MODES.generate.endpoint, {
+      const res = await fetch("/cf/text-to-image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt }),
@@ -401,98 +455,19 @@
       canvasWrap.innerHTML = "";
       canvasWrap.appendChild(img);
       const p = data.params;
-      metaEl.textContent = `sorgente: ${p.source} · seed: ${p.seed}`;
+      metaEl.textContent = p.translated_prompt
+        ? `tradotto: "${p.translated_prompt}" · seed: ${p.seed}`
+        : `seed: ${p.seed}`;
       openLink.href = data.image_url;
       resultFooter.hidden = false;
       textSubmitBtn.disabled = false;
+      if (currentUser) loadHistory();
     };
     img.onerror = () => {
       showError("Impossibile caricare l'immagine generata.");
       textSubmitBtn.disabled = false;
     };
     img.src = data.image_url;
-  }
-
-  async function describeImage(file) {
-    resetResultArea(MODES.describe.spinnerLabel);
-    uploadSubmitBtn.disabled = true;
-
-    const localImg = await loadLocalImage(file);
-    canvasWrap.style.aspectRatio = `${localImg.naturalWidth} / ${localImg.naturalHeight}`;
-
-    const form = new FormData();
-    form.append("image", file);
-
-    let data;
-    try {
-      const res = await fetch(MODES.describe.endpoint, { method: "POST", body: form });
-      data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
-    } catch (err) {
-      showError(err.message);
-      uploadSubmitBtn.disabled = false;
-      return;
-    }
-
-    canvasWrap.innerHTML = "";
-    canvasWrap.appendChild(localImg);
-    resultText.textContent = data.description;
-    resultText.hidden = false;
-    uploadSubmitBtn.disabled = false;
-  }
-
-  async function detectObjects(file) {
-    resetResultArea(MODES.detect.spinnerLabel);
-    uploadSubmitBtn.disabled = true;
-
-    const localImg = await loadLocalImage(file);
-    canvasWrap.style.aspectRatio = `${localImg.naturalWidth} / ${localImg.naturalHeight}`;
-
-    const form = new FormData();
-    form.append("image", file);
-
-    let data;
-    try {
-      const res = await fetch(MODES.detect.endpoint, { method: "POST", body: form });
-      data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Errore sconosciuto");
-    } catch (err) {
-      showError(err.message);
-      uploadSubmitBtn.disabled = false;
-      return;
-    }
-
-    const canvas = document.createElement("canvas");
-    canvas.width = localImg.naturalWidth;
-    canvas.height = localImg.naturalHeight;
-    const ctx = canvas.getContext("2d");
-    ctx.drawImage(localImg, 0, 0);
-
-    const objects = data.objects || [];
-    const palette = ["#6b3f78", "#c1503f", "#3f6b5e", "#8c6a2f", "#3f5a78", "#8c3f6e"];
-    ctx.lineWidth = Math.max(2, canvas.width / 300);
-    ctx.font = `600 ${Math.max(14, canvas.width / 50)}px Inter, sans-serif`;
-    ctx.textBaseline = "top";
-    objects.forEach((obj, i) => {
-      const color = palette[i % palette.length];
-      const { xmin, ymin, xmax, ymax } = obj.box;
-      ctx.strokeStyle = color;
-      ctx.strokeRect(xmin, ymin, xmax - xmin, ymax - ymin);
-      const label = `${obj.label} ${Math.round(obj.score * 100)}%`;
-      const textWidth = ctx.measureText(label).width;
-      ctx.fillStyle = color;
-      ctx.fillRect(xmin, ymin, textWidth + 10, parseInt(ctx.font, 10) + 8);
-      ctx.fillStyle = "#f4ecdf";
-      ctx.fillText(label, xmin + 5, ymin + 4);
-    });
-
-    canvasWrap.innerHTML = "";
-    canvasWrap.appendChild(canvas);
-    resultText.textContent = objects.length
-      ? `${objects.length} ${objects.length === 1 ? "oggetto rilevato" : "oggetti rilevati"}: ${objects.map((o) => o.label).join(", ")}`
-      : "Nessun oggetto riconosciuto in questa immagine.";
-    resultText.hidden = false;
-    uploadSubmitBtn.disabled = false;
   }
 
   textForm.addEventListener("submit", (e) => {
@@ -507,13 +482,6 @@
       e.preventDefault();
       textForm.requestSubmit();
     }
-  });
-
-  uploadForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (!selectedFile) return;
-    if (mode === "describe") describeImage(selectedFile);
-    else if (mode === "detect") detectObjects(selectedFile);
   });
 </script>
 </body>
