@@ -4,23 +4,28 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Aetheria Studio — Generatore di Immagini</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%23ff6f3c'/%3E%3Cstop offset='1' stop-color='%23ffcd3c'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%23150a3a'/%3E%3Cpath d='M22 72 C28 44 42 26 70 21' stroke='url(%23g)' stroke-width='9' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='72' cy='22' r='8' fill='url(%23g)'/%3E%3C/svg%3E" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='1' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%235c3568'/%3E%3Cstop offset='1' stop-color='%23caa0ad'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' rx='24' fill='%232a2130'/%3E%3Cpath d='M22 72 C28 44 42 26 70 21' stroke='url(%23g)' stroke-width='9' fill='none' stroke-linecap='round'/%3E%3Ccircle cx='72' cy='22' r='8' fill='url(%23g)'/%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   :root {
     color-scheme: dark;
-    --bg: #0a0221;
-    --bg-soft: #150a3a;
-    --bg-elevated: #1b1148;
-    --border: #362a6b;
-    --text: #f2f0ff;
-    --text-dim: #b6aee0;
-    --text-faint: #6f63a3;
-    --accent: #ff6f3c;
-    --accent-2: #ffcd3c;
-    --danger: #ff8a8a;
+    --bg: #241b28;
+    --bg-soft: #34293a;
+    --bg-elevated: #3c2f43;
+    --border: rgba(244,232,216,0.14);
+    --text: #f4ecdf;
+    --text-dim: #cbb9c6;
+    --text-faint: #8d7690;
+    --accent: #6b3f78;
+    --accent-hover: #7d4c8c;
+    --accent-rose: #caa0ad;
+    --cream: #efe4d1;
+    --cream-2: #e6d8bf;
+    --ink: #382a37;
+    --ink-dim: #6d5868;
+    --danger: #c1503f;
   }
   * { box-sizing: border-box; }
   body {
@@ -29,48 +34,55 @@
     color: var(--text);
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     background:
-      radial-gradient(ellipse 800px 500px at 15% -5%, rgba(255,111,60,0.16), transparent 60%),
-      radial-gradient(ellipse 700px 500px at 90% 10%, rgba(233,144,255,0.10), transparent 55%),
+      radial-gradient(ellipse 760px 480px at 18% -8%, rgba(202,160,173,0.16), transparent 60%),
+      radial-gradient(ellipse 640px 460px at 92% 6%, rgba(107,63,120,0.28), transparent 55%),
       var(--bg);
     background-attachment: fixed;
   }
   .page {
     max-width: 760px;
     margin: 0 auto;
-    padding: 56px 20px 60px;
+    padding: 60px 20px 64px;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
 
-  header { text-align: center; margin-bottom: 32px; }
-  .brand { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 10px; }
-  .brand svg { width: 30px; height: 30px; flex-shrink: 0; }
-  .brand span {
-    font-family: "Space Grotesk", sans-serif;
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    background: linear-gradient(120deg, var(--accent), var(--accent-2));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+  header { text-align: center; margin-bottom: 34px; position: relative; }
+  .eyebrow {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--accent-rose); margin: 0 0 14px;
   }
-  p.hint { color: var(--text-dim); margin: 0 auto; font-size: 0.92rem; line-height: 1.5; text-align: center; max-width: 460px; min-height: 2.7em; }
+  .brand { display: flex; align-items: center; justify-content: center; gap: 12px; margin: 0 0 14px; position: relative; }
+  .brand::before {
+    content: ""; position: absolute; left: 50%; top: 50%;
+    width: 220px; height: 220px; transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(202,160,173,0.22), transparent 70%);
+    z-index: -1;
+  }
+  .brand svg { width: 32px; height: 32px; flex-shrink: 0; }
+  .brand span {
+    font-family: "Playfair Display", serif;
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  p.hint { color: var(--text-dim); margin: 0 auto; font-size: 0.94rem; line-height: 1.55; text-align: center; max-width: 460px; min-height: 2.9em; }
 
   .mode-toggle {
-    display: flex; gap: 4px; margin: 26px 0 22px;
-    background: var(--bg-soft); padding: 5px; border-radius: 14px; border: 1px solid var(--border);
+    display: flex; gap: 4px; margin: 28px 0 24px;
+    background: var(--bg-soft); padding: 5px; border-radius: 999px; border: 1px solid var(--border);
   }
   .mode-btn {
     display: flex; align-items: center; gap: 6px;
-    padding: 9px 16px; border-radius: 10px; border: none; background: transparent;
+    padding: 10px 18px; border-radius: 999px; border: none; background: transparent;
     color: var(--text-dim); font-size: 0.85rem; font-weight: 500; font-family: inherit; cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
     white-space: nowrap;
   }
-  .mode-btn:hover:not(.active) { color: var(--text); background: rgba(255,255,255,0.04); }
-  .mode-btn.active { background: var(--accent); color: #1a0a00; font-weight: 600; }
+  .mode-btn:hover:not(.active) { color: var(--text); background: rgba(244,232,216,0.06); }
+  .mode-btn.active { background: var(--accent); color: var(--cream); font-weight: 600; }
 
   form { width: 100%; max-width: 580px; display: flex; gap: 10px; }
   form[hidden] { display: none; }
@@ -78,9 +90,9 @@
   textarea {
     flex: 1;
     resize: none;
-    height: 54px;
-    padding: 15px 16px;
-    border-radius: 13px;
+    height: 56px;
+    padding: 16px 18px;
+    border-radius: 999px;
     border: 1px solid var(--border);
     background: var(--bg-soft);
     color: var(--text);
@@ -89,25 +101,25 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   textarea::placeholder { color: var(--text-faint); }
-  textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,111,60,0.18); }
+  textarea:focus { outline: none; border-color: var(--accent-rose); box-shadow: 0 0 0 3px rgba(202,160,173,0.2); }
 
   button.submit {
-    padding: 0 24px;
-    border-radius: 13px;
+    padding: 0 28px;
+    border-radius: 999px;
     border: none;
     background: var(--accent);
-    color: #1a0a00;
+    color: var(--cream);
     font-weight: 600;
     font-size: 0.95rem;
     font-family: inherit;
     cursor: pointer;
-    transition: filter 0.15s ease, transform 0.1s ease;
+    transition: background 0.15s ease, transform 0.1s ease;
   }
-  button.submit:hover:not(:disabled) { filter: brightness(1.08); }
+  button.submit:hover:not(:disabled) { background: var(--accent-hover); }
   button.submit:active:not(:disabled) { transform: scale(0.97); }
   button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .kbd-hint { margin-top: 10px; color: var(--text-faint); font-size: 0.74rem; text-align: center; }
+  .kbd-hint { margin-top: 12px; color: var(--text-faint); font-size: 0.74rem; text-align: center; }
   .kbd-hint kbd {
     font-family: inherit; background: var(--bg-soft); border: 1px solid var(--border);
     border-radius: 4px; padding: 1px 6px; font-size: 0.72rem;
@@ -116,8 +128,8 @@
   .dropzone {
     flex: 1;
     display: flex; align-items: center; gap: 12px;
-    padding: 10px 14px;
-    border-radius: 13px;
+    padding: 10px 18px;
+    border-radius: 999px;
     border: 1px dashed var(--border);
     background: var(--bg-soft);
     color: var(--text-faint);
@@ -125,19 +137,18 @@
     cursor: pointer;
     transition: border-color 0.15s ease, color 0.15s ease;
   }
-  .dropzone:hover, .dropzone.drag { border-color: var(--accent); color: var(--text-dim); }
+  .dropzone:hover, .dropzone.drag { border-color: var(--accent-rose); color: var(--text-dim); }
   .dropzone.has-file { color: var(--text); border-style: solid; }
-  .dropzone img { width: 34px; height: 34px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+  .dropzone img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
   .dropzone input { display: none; }
 
   .result-card {
-    margin-top: 34px;
+    margin-top: 38px;
     width: 100%;
     max-width: 640px;
-    border-radius: 20px;
-    background: var(--bg-elevated);
-    border: 1px solid var(--border);
-    box-shadow: 0 20px 50px -20px rgba(0,0,0,0.5);
+    border-radius: 24px;
+    background: var(--cream);
+    box-shadow: 0 24px 60px -24px rgba(0,0,0,0.55);
     overflow: hidden;
   }
   .canvas-wrap {
@@ -148,69 +159,70 @@
     justify-content: center;
     overflow: hidden;
     position: relative;
-    background: var(--bg-soft);
+    background: var(--cream-2);
   }
   .canvas-wrap img, .canvas-wrap canvas {
     max-width: 100%; max-height: 100%; width: auto; height: auto;
     display: block; animation: reveal 0.4s ease;
   }
   @keyframes reveal { from { opacity: 0; transform: scale(1.02); } to { opacity: 1; transform: scale(1); } }
-  .placeholder { color: var(--text-faint); font-size: 0.9rem; text-align: center; padding: 20px; }
+  .placeholder { color: var(--ink-dim); font-size: 0.9rem; text-align: center; padding: 20px; font-family: "Playfair Display", serif; font-style: italic; }
   .spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
   .spinner {
     width: 32px; height: 32px;
-    border: 3px solid var(--border);
+    border: 3px solid rgba(56,42,55,0.15);
     border-top-color: var(--accent);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
   }
-  .spinner-label { color: var(--text-faint); font-size: 0.8rem; }
+  .spinner-label { color: var(--ink-dim); font-size: 0.8rem; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .result-text {
-    padding: 16px 18px; border-top: 1px solid var(--border);
-    color: var(--text-dim); font-size: 0.9rem; line-height: 1.5;
+    padding: 18px 22px; border-top: 1px solid rgba(56,42,55,0.12);
+    color: var(--ink); font-size: 0.94rem; line-height: 1.6;
   }
   .result-text[hidden] { display: none; }
 
   .result-footer {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 12px 18px; border-top: 1px solid var(--border);
+    padding: 14px 22px; border-top: 1px solid rgba(56,42,55,0.12);
   }
   .result-footer[hidden] { display: none; }
-  .meta { color: var(--text-faint); font-size: 0.76rem; }
+  .meta { color: var(--ink-dim); font-size: 0.76rem; }
   .result-footer a {
-    color: var(--text-dim); font-size: 0.8rem; text-decoration: none;
-    border: 1px solid var(--border); padding: 6px 12px; border-radius: 8px;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    color: var(--ink); font-size: 0.8rem; text-decoration: none;
+    border: 1px solid rgba(56,42,55,0.2); padding: 6px 14px; border-radius: 999px;
+    transition: border-color 0.15s ease, background 0.15s ease;
   }
-  .result-footer a:hover { border-color: var(--accent); color: var(--text); }
+  .result-footer a:hover { border-color: var(--accent); background: rgba(107,63,120,0.08); }
 
-  .error { color: var(--danger); margin-top: 14px; font-size: 0.88rem; text-align: center; max-width: 500px; }
+  .error { color: var(--danger); margin-top: 16px; font-size: 0.88rem; text-align: center; max-width: 500px; }
 
-  footer { margin-top: 56px; color: var(--text-faint); font-size: 0.76rem; text-align: center; }
+  footer { margin-top: 60px; color: var(--text-faint); font-size: 0.76rem; text-align: center; }
   footer a { color: var(--text-dim); text-decoration: none; border-bottom: 1px solid var(--border); }
-  footer a:hover { color: var(--text); border-color: var(--accent); }
+  footer a:hover { color: var(--text); border-color: var(--accent-rose); }
 
   @media (max-width: 520px) {
     form { flex-direction: column; }
     button.submit { padding: 13px; }
-    .mode-toggle { flex-wrap: wrap; justify-content: center; }
+    .mode-toggle { flex-wrap: wrap; justify-content: center; border-radius: 18px; }
   }
 </style>
 </head>
 <body>
 <div class="page">
   <header>
+    <p class="eyebrow">AI Image Studio</p>
     <div class="brand">
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <defs>
           <linearGradient id="logo-g" x1="0" y1="1" x2="1" y2="0">
-            <stop offset="0" stop-color="#ff6f3c" />
-            <stop offset="1" stop-color="#ffcd3c" />
+            <stop offset="0" stop-color="#6b3f78" />
+            <stop offset="1" stop-color="#caa0ad" />
           </linearGradient>
         </defs>
-        <rect width="100" height="100" rx="24" fill="#150a3a" />
+        <rect width="100" height="100" rx="24" fill="#34293a" />
         <path d="M22 72 C28 44 42 26 70 21" stroke="url(#logo-g)" stroke-width="9" fill="none" stroke-linecap="round" />
         <circle cx="72" cy="22" r="8" fill="url(#logo-g)" />
       </svg>
@@ -457,21 +469,21 @@
     ctx.drawImage(localImg, 0, 0);
 
     const objects = data.objects || [];
+    const palette = ["#6b3f78", "#c1503f", "#3f6b5e", "#8c6a2f", "#3f5a78", "#8c3f6e"];
     ctx.lineWidth = Math.max(2, canvas.width / 300);
-    ctx.font = `${Math.max(14, canvas.width / 50)}px sans-serif`;
+    ctx.font = `600 ${Math.max(14, canvas.width / 50)}px Inter, sans-serif`;
     ctx.textBaseline = "top";
     objects.forEach((obj, i) => {
-      const hue = (i * 47) % 360;
-      const color = `hsl(${hue} 90% 60%)`;
+      const color = palette[i % palette.length];
       const { xmin, ymin, xmax, ymax } = obj.box;
       ctx.strokeStyle = color;
       ctx.strokeRect(xmin, ymin, xmax - xmin, ymax - ymin);
       const label = `${obj.label} ${Math.round(obj.score * 100)}%`;
       const textWidth = ctx.measureText(label).width;
       ctx.fillStyle = color;
-      ctx.fillRect(xmin, ymin, textWidth + 8, parseInt(ctx.font, 10) + 6);
-      ctx.fillStyle = "#0a0221";
-      ctx.fillText(label, xmin + 4, ymin + 3);
+      ctx.fillRect(xmin, ymin, textWidth + 10, parseInt(ctx.font, 10) + 8);
+      ctx.fillStyle = "#f4ecdf";
+      ctx.fillText(label, xmin + 5, ymin + 4);
     });
 
     canvasWrap.innerHTML = "";
