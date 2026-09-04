@@ -45,6 +45,11 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 
 
+@login_manager.unauthorized_handler
+def unauthorized():
+    return jsonify({"error": "Devi accedere per usare questa funzione."}), 401
+
+
 class User(UserMixin):
     def __init__(self, row):
         self.id = str(row["id"])
@@ -122,7 +127,7 @@ def register():
         return jsonify({"error": "Username già in uso."}), 400
 
     user_id = db.create_user(username, generate_password_hash(password, method="pbkdf2:sha256"))
-    login_user(User(db.get_user_by_id(user_id)))
+    login_user(User(db.get_user_by_id(user_id)), remember=True)
     return jsonify({"username": username})
 
 
@@ -136,7 +141,7 @@ def login():
     if not row or not check_password_hash(row["password_hash"], password):
         return jsonify({"error": "Username o password non corretti."}), 401
 
-    login_user(User(row))
+    login_user(User(row), remember=True)
     return jsonify({"username": row["username"]})
 
 

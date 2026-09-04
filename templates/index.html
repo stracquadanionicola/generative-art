@@ -173,15 +173,18 @@
   .result-footer {
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     padding: 14px 22px; border-top: 1px solid rgba(56,42,55,0.12);
+    flex-wrap: wrap;
   }
   .result-footer[hidden] { display: none; }
   .meta { color: var(--ink-dim); font-size: 0.76rem; }
-  .result-footer a {
+  .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .result-footer a, .result-actions button {
     color: var(--ink); font-size: 0.8rem; text-decoration: none;
     border: 1px solid rgba(56,42,55,0.2); padding: 6px 14px; border-radius: 999px;
     transition: border-color 0.15s ease, background 0.15s ease;
+    background: none; font-family: inherit; cursor: pointer; white-space: nowrap;
   }
-  .result-footer a:hover { border-color: var(--accent); background: rgba(107,63,120,0.08); }
+  .result-footer a:hover, .result-actions button:hover { border-color: var(--accent); background: rgba(107,63,120,0.08); }
 
   .error { color: var(--danger); margin-top: 16px; font-size: 0.88rem; text-align: center; max-width: 500px; }
 
@@ -255,7 +258,11 @@
     </div>
     <div class="result-footer" id="result-footer" hidden>
       <span class="meta" id="meta"></span>
-      <a id="open-link" href="#" target="_blank" rel="noopener">Apri a schermo intero ↗</a>
+      <div class="result-actions">
+        <a id="download-link" href="#" download="aetheria-studio.png">Scarica ⬇</a>
+        <button type="button" id="share-btn">Condividi ↗</button>
+        <a id="open-link" href="#" target="_blank" rel="noopener">Schermo intero ↗</a>
+      </div>
     </div>
   </div>
   <div class="error" id="error" hidden></div>
@@ -287,6 +294,8 @@
   const canvasWrap = document.getElementById("canvas-wrap");
   const resultFooter = document.getElementById("result-footer");
   const openLink = document.getElementById("open-link");
+  const downloadLink = document.getElementById("download-link");
+  const shareBtn = document.getElementById("share-btn");
   const errorEl = document.getElementById("error");
   const metaEl = document.getElementById("meta");
   const historySection = document.getElementById("history-section");
@@ -294,6 +303,51 @@
 
   let authMode = "login";
   let currentUser = null;
+  let lastImageUrl = null;
+  let lastPrompt = "";
+
+  function slugify(text) {
+    return (
+      text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "immagine"
+    );
+  }
+
+  async function shareCurrentImage() {
+    if (!lastImageUrl) return;
+    const absoluteUrl = new URL(lastImageUrl, window.location.origin).href;
+    const originalLabel = shareBtn.textContent;
+
+    const flash = (label) => {
+      shareBtn.textContent = label;
+      setTimeout(() => { shareBtn.textContent = originalLabel; }, 1800);
+    };
+
+    try {
+      const resp = await fetch(lastImageUrl);
+      const blob = await resp.blob();
+      const file = new File([blob], "aetheria-studio.png", { type: blob.type || "image/png" });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Aetheria Studio", text: lastPrompt });
+        return;
+      }
+      if (navigator.share) {
+        await navigator.share({ url: absoluteUrl, title: "Aetheria Studio", text: lastPrompt });
+        return;
+      }
+      throw new Error("share-unsupported");
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+      try {
+        await navigator.clipboard.writeText(absoluteUrl);
+        flash("Link copiato ✓");
+      } catch {
+        flash("Copia non riuscita");
+      }
+    }
+  }
+
+  shareBtn.addEventListener("click", shareCurrentImage);
 
   function renderTopbar() {
     topbar.innerHTML = "";
@@ -459,6 +513,10 @@
         ? `tradotto: "${p.translated_prompt}" · seed: ${p.seed}`
         : `seed: ${p.seed}`;
       openLink.href = data.image_url;
+      downloadLink.href = data.image_url;
+      downloadLink.download = `aetheria-${slugify(prompt)}.png`;
+      lastImageUrl = data.image_url;
+      lastPrompt = prompt;
       resultFooter.hidden = false;
       textSubmitBtn.disabled = false;
       if (currentUser) loadHistory();
