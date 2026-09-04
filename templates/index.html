@@ -212,13 +212,11 @@
   @keyframes spin { to { transform: rotate(360deg); } }
 
   .result-footer {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    display: flex; align-items: center; justify-content: center;
     padding: 14px 22px; border-top: 1px solid rgba(56,42,55,0.12);
-    flex-wrap: wrap;
   }
   .result-footer[hidden] { display: none; }
-  .meta { color: var(--ink-dim); font-size: 0.76rem; }
-  .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .result-actions { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
   .result-footer a, .result-actions button {
     color: var(--ink); font-size: 0.8rem; text-decoration: none;
     border: 1px solid rgba(56,42,55,0.2); padding: 6px 14px; border-radius: 999px;
@@ -294,7 +292,6 @@
       <div class="placeholder" id="placeholder">Il risultato apparirà qui</div>
     </div>
     <div class="result-footer" id="result-footer" hidden>
-      <span class="meta" id="meta"></span>
       <div class="result-actions">
         <a id="download-link" href="#" download="aetheria-studio.png">Scarica ⬇</a>
         <button type="button" id="share-btn">Condividi ↗</button>
@@ -329,7 +326,6 @@
   const downloadLink = document.getElementById("download-link");
   const shareBtn = document.getElementById("share-btn");
   const errorEl = document.getElementById("error");
-  const metaEl = document.getElementById("meta");
   const accountPanel = document.getElementById("account-panel");
   const accountGreeting = document.getElementById("account-greeting");
   const logoutBtn = document.getElementById("logout-btn");
@@ -557,10 +553,6 @@
       canvasWrap.style.aspectRatio = `${img.naturalWidth} / ${img.naturalHeight}`;
       canvasWrap.innerHTML = "";
       canvasWrap.appendChild(img);
-      const p = data.params;
-      metaEl.textContent = p.translated_prompt
-        ? `tradotto: "${p.translated_prompt}" · seed: ${p.seed}`
-        : `seed: ${p.seed}`;
       openLink.href = data.image_url;
       downloadLink.href = data.image_url;
       downloadLink.download = `aetheria-${slugify(prompt)}.png`;
